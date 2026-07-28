@@ -240,13 +240,13 @@ async def websocket_endpoint(ws: WebSocket):
     except WebSocketDisconnect:
         pass
 
-# ─── Static Files (must be last) ─────────
-frontend_path = Path(__file__).parent.parent / "frontend"
+# ─── Static Files (must be last, assets before frontend) ──
 assets_path = Path(__file__).parent.parent / "assets"
-if frontend_path.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
 if assets_path.exists():
     app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
+frontend_path = Path(__file__).parent.parent / "frontend"
+if frontend_path.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
 
 # ─── Startup ────────────────────────────
 if __name__ == "__main__":
