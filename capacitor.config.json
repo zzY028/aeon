@@ -1,0 +1,10 @@
+{
+  "appId": "com.aeon.panel",
+  "appName": "Aeon",
+  "webDir": "frontend",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "http://8.217.214.254:8000",
+    "cleartext": true
+  }
+}

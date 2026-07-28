@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Aeon</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+body{background:#e8e8e2;display:flex;justify-content:center;align-items:center}
+.app{width:100%;max-width:430px;height:100%;background:#fff;display:flex;flex-direction:column;position:relative;overflow:hidden}
+@media(min-width:500px){.app{border:1px solid #ddd;border-radius:22px;height:852px}}
+.screen{display:none;flex:1;flex-direction:column;padding:max(14px,3vw);overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fadeIn .2s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:max(8px,2vw)}
+.back-btn{font-size:clamp(7px,1.8vw,8px);color:#aaa;cursor:pointer}
+.top-title{font-size:clamp(9px,2.2vw,11px);color:#1a1a1a;font-weight:500}
+.moon-icon{width:clamp(22px,5.5vw,28px);height:clamp(22px,5.5vw,28px);opacity:.85;flex-shrink:0}
+.moon-icon img{width:100%;height:100%;object-fit:contain}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,1.3vw,7px);margin-bottom:clamp(6px,1.5vw,8px)}
+.stat-box{border:1px solid #e8e8e8;border-radius:clamp(7px,1.8vw,9px);padding:clamp(7px,1.8vw,9px) clamp(8px,2vw,11px);background:#fafaf7;cursor:pointer;transition:all .12s}
+.stat-box:active{background:#f0f0eb}
+.stat-val{font-size:clamp(14px,3.8vw,18px);color:#1a1a1a;font-weight:500}
+.stat-label{font-size:clamp(6px,1.5vw,7px);color:#aaa;text-transform:uppercase;letter-spacing:.5px}
+.chips{display:flex;gap:clamp(3px,.8vw,5px);margin:clamp(5px,1.3vw,7px) 0}
+.chip{border:1px solid #eee;border-radius:10px;padding:clamp(4px,1vw,5px) clamp(7px,1.8vw,9px);font-size:clamp(6px,1.5vw,7px);color:#666;background:#fafaf7;cursor:pointer;transition:all .12s}
+.chip:active{background:#e8e8e2}
+.list-block{border:1px solid #eee;border-radius:clamp(7px,1.8vw,9px);overflow:hidden;background:#fafaf7;margin-bottom:6px}
+.list-row{display:flex;align-items:center;padding:clamp(7px,1.8vw,9px);border-bottom:1px solid #f0f0f0;font-size:clamp(7px,1.8vw,9px);gap:clamp(5px,1.3vw,7px);cursor:pointer;transition:all .12s}
+.list-row:last-child{border:none}.list-row:active{background:#f0f0eb}
+.star-bullet{width:clamp(8px,2vw,10px);height:clamp(8px,2vw,10px);opacity:.35;flex-shrink:0}
+.star-bullet img{width:100%;height:100%;object-fit:contain}
+.checkbox{width:clamp(11px,2.8vw,14px);height:clamp(11px,2.8vw,14px);border:1.5px solid #1a1a1a;border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:clamp(6px,1.5vw,8px)}
+.checkbox.done{background:#1a1a1a;color:#fff}
+.fab{position:absolute;bottom:max(16px,4vw);right:max(14px,3.5vw);width:clamp(26px,6.5vw,30px);height:clamp(26px,6.5vw,30px);border:1.5px solid #1a1a1a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#1a1a1a;background:#fafaf7;cursor:pointer;z-index:9}
+.fab:active{transform:scale(.9)}
+.chat-area{flex:1;display:flex;flex-direction:column;gap:4px;padding:2px 0;overflow-y:auto}
+.chat-bubble{padding:clamp(5px,1.3vw,7px) clamp(7px,1.8vw,9px);border-radius:8px;font-size:clamp(7px,1.7vw,8px);max-width:75%;line-height:1.4}
+.bubble-me{background:#1a1a1a;color:#fff;align-self:flex-end;border-bottom-right-radius:2px}
+.bubble-you{border:1px solid #e0e0e0;align-self:flex-start;border-bottom-left-radius:2px;background:#fafaf7}
+.chat-bar{display:flex;border:1px solid #eee;border-radius:14px;padding:3px;margin:8px 0 14px}
+.chat-in{flex:1;border:none;font-size:clamp(7px,1.7vw,8px);padding:6px 8px;background:transparent;outline:none}
+.chat-send{font-size:12px;padding:4px 8px;cursor:pointer;color:#1a1a1a}
+.file-row{display:flex;align-items:center;padding:clamp(7px,1.8vw,9px) 0;border-bottom:1px solid #f0f0f0;font-size:clamp(7px,1.8vw,9px);gap:8px;cursor:pointer}
+.file-row:active{opacity:.6}.file-icon{font-size:clamp(9px,2.3vw,12px);width:24px;text-align:center}
+.brief-card{border:1px solid #eee;border-radius:10px;padding:12px;background:#fafaf7;margin:4px 0}
+.brief-chapter{font-size:clamp(8px,2vw,9px);font-weight:600;margin-bottom:4px}
+.brief-text{font-size:clamp(7px,1.7vw,8px);color:#555;line-height:1.6}
+.toast{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:clamp(7px,1.7vw,8px);padding:6px 16px;border-radius:10px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+.login-form{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:80px}
+.login-input{width:100%;max-width:280px;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;background:#fafaf7}
+.login-input:focus{border-color:#1a1a1a}
+.login-btn{width:100%;max-width:280px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;letter-spacing:1px;cursor:pointer}
+.add-form{display:flex;flex-direction:column;gap:8px;padding:12px;background:#fafaf7;border:1px solid #eee;border-radius:10px;margin:8px 0}
+.add-form input,.add-form select{border:1px solid #ddd;border-radius:6px;padding:8px 10px;font-size:clamp(7px,1.8vw,9px);background:#fff;outline:none}
+.add-form input:focus{border-color:#1a1a1a}
+.form-btns{display:flex;gap:6px}.btn-sm{flex:1;padding:6px;border-radius:6px;font-size:clamp(6px,1.5vw,8px);cursor:pointer;text-align:center;border:1px solid #ddd;background:#fff}.btn-sm.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+</style></head><body>
+
+<div class="app">
+<!-- LOGIN -->
+<div class="screen active" id="login">
+<div style="text-align:center;padding-top:60px"><div style="width:48px;height:48px;border:2px solid #1a1a1a;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;position:relative"><div style="width:10px;height:10px;background:#1a1a1a;border-radius:50%;position:absolute;top:10px;right:10px"></div></div><div style="font-size:16px;font-weight:600;letter-spacing:4px;margin-bottom:24px">A e o n</div></div>
+<div class="login-form">
+<input class="login-input" id="loginUser" placeholder="用户名">
+<input class="login-input" id="loginPwd" placeholder="密码">
+<input class="login-input" id="loginInvite" placeholder="邀请码（管理员留空）">
+<button class="login-btn" onclick="doLogin()">登 录</button>
+</div></div>
+
+<!-- HOME -->
+<div class="screen" id="home">
+<div class="top-bar"><span style="font-size:clamp(7px,1.8vw,8px);color:#aaa">Aeon</span><div class="moon-icon"><img src="/assets/moons/11.png" id="homeMoon" alt=""></div></div>
+<div class="stat-row"><div class="stat-box" onclick="go('todos')"><div class="stat-val" id="todoCount">0</div><div class="stat-label">待办</div></div><div class="stat-box"><div class="stat-val">——</div><div class="stat-label">余额</div></div></div>
+<div class="chips"><span class="chip" onclick="go('chat')">对话</span><span class="chip" onclick="go('briefing')">早报</span><span class="chip" onclick="go('files')">文件</span><span class="chip" onclick="go('wiki')">Wiki</span></div>
+<div class="list-block"><div class="list-row" onclick="go('todos')"><div class="star-bullet" id="homeStar"></div><div style="flex:1" id="homeTodoText">加载中...</div></div></div>
+<div class="fab" onclick="showAddForm('home')">+</div>
+<div class="add-form" id="addFormHome" style="display:none"><input id="newTitle" placeholder="待办标题"><input id="newDue" type="datetime-local" placeholder="截止时间"><select id="newPlat"><option value="both">微信+飞书</option><option value="weixin">仅微信</option><option value="feishu">仅飞书</option></select><div class="form-btns"><button class="btn-sm" onclick="hideAddForm()">取消</button><button class="btn-sm primary" onclick="addTodo()">新建</button></div></div>
+</div>
+
+<!-- TODOS -->
+<div class="screen" id="todos">
+<div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">待办</div></div>
+<div class="list-block" id="todosList"></div>
+<div class="fab" onclick="showAddForm('todos')">+</div>
+<div class="add-form" id="addFormTodos" style="display:none"><input id="newTitle2" placeholder="待办标题"><input id="newDue2" type="datetime-local"><select id="newPlat2"><option value="both">微信+飞书</option><option value="weixin">仅微信</option><option value="feishu">仅飞书</option></select><div class="form-btns"><button class="btn-sm" onclick="hideAddForm()">取消</button><button class="btn-sm primary" onclick="addTodo()">新建</button></div></div>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="chat"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">对话 · ZL</div></div><div class="chat-area" id="chatMsgs"><div class="chat-bubble bubble-you">嗨，我是 ZL。在这里你可以直接跟我聊 ✨</div></div><div class="chat-bar"><input class="chat-in" id="chatInput" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendChat()"><span class="chat-send" onclick="sendChat()">↑</span></div></div>
+
+<!-- FILES -->
+<div class="screen" id="files"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">文件 /root/</div></div><div id="filesList"></div></div>
+
+<!-- BRIEFING -->
+<div class="screen" id="briefing"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">今日早报</div></div><div class="brief-card"><div class="brief-chapter">📖 苏菲的世界</div><div class="brief-text">今天的内容即将推送...</div><div class="brief-date" style="margin-top:6px">每天早上 07:00</div></div></div>
+
+<!-- WIKI -->
+<div class="screen" id="wiki"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">Wiki</div></div><div style="border:1px solid #eee;border-radius:12px;padding:40px 20px;text-align:center;background:#fafaf7"><div style="font-size:clamp(8px,2vw,10px);color:#555">知识图谱</div><div style="font-size:clamp(6px,1.5vw,7px);color:#aaa;margin-top:4px">144 页 · 7 本书 · 64 概念</div></div></div>
+
+<div class="toast" id="toast"></div></div>
+
+<script>
+// ─── Config ─────────────────────────────
+const API = 'http://8.217.214.254:8000/api';
+let token = localStorage.getItem('aeon_token') || '';
+let username = localStorage.getItem('aeon_user') || '';
+
+// ─── Navigation ────────────────────────
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'home') loadHome();
+  if (id === 'todos') loadTodos();
+  if (id === 'files') loadFiles();
+}
+
+// ─── Auth ──────────────────────────────
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPwd').value.trim();
+  const code = document.getElementById('loginInvite').value.trim();
+  if (!u) return toast('请输入用户名');
+  const body = {username: u, password: p};
+  if (code) body.invite_code = code;
+  try {
+    const r = await fetch(`${API}/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    if (r.ok) {
+      token = d.token; username = d.username;
+      localStorage.setItem('aeon_token', token);
+      localStorage.setItem('aeon_user', username);
+      go('home');
+    } else { toast(d.detail || '登录失败'); }
+  } catch(e) { toast('网络错误'); }
+}
+
+// ─── Home ──────────────────────────────
+async function loadHome() {
+  if (!token) { go('login'); return; }
+  try {
+    const r = await fetch(`${API}/todos`, {headers:{'Authorization':`Bearer ${token}`}});
+    if (!r.ok) { if(r.status===401){go('login');return;} }
+    const todos = await r.json();
+    document.getElementById('todoCount').textContent = todos.length;
+    if (todos.length > 0) {
+      document.getElementById('homeTodoText').textContent = todos[0].title;
+    } else {
+      document.getElementById('homeTodoText').textContent = '暂无待办';
+    }
+  } catch(e) {}
+}
+
+// ─── Todos ────────────────────────────
+async function loadTodos() {
+  if (!token) return;
+  const container = document.getElementById('todosList');
+  try {
+    const r = await fetch(`${API}/todos`, {headers:{'Authorization':`Bearer ${token}`}});
+    const todos = await r.json();
+    container.innerHTML = todos.length === 0 ? '<div style="text-align:center;color:#aaa;padding:30px;font-size:8px">暂无待办</div>' : '';
+    todos.forEach(t => {
+      const row = document.createElement('div'); row.className = 'list-row';
+      const cb = document.createElement('div'); cb.className = 'checkbox' + (t.done ? ' done' : ''); cb.textContent = '✓';
+      cb.onclick = (e) => { e.stopPropagation(); markDone(t.id, cb); };
+      const text = document.createElement('div'); text.style.flex = '1';
+      text.innerHTML = `<div style="font-size:clamp(7px,1.8vw,8px)${t.done?';text-decoration:line-through;opacity:.4':''}">${t.title}</div><div style="font-size:clamp(5px,1.3vw,6px);color:#aaa">${new Date(t.due_at).toLocaleString('zh-CN')} · ${t.platform}</div>`;
+      row.appendChild(cb); row.appendChild(text);
+      const del = document.createElement('div'); del.style.cssText = 'color:#aaa;font-size:12px;padding:4px;cursor:pointer'; del.textContent = '×';
+      del.onclick = (e) => { e.stopPropagation(); deleteTodo(t.id, row); };
+      row.appendChild(del);
+      container.appendChild(row);
+    });
+  } catch(e) {}
+}
+
+async function markDone(id, cb) {
+  cb.classList.add('done');
+  await fetch(`${API}/todos/${id}/done`, {method:'PUT',headers:{'Authorization':`Bearer ${token}`}});
+  setTimeout(() => { loadTodos(); loadHome(); }, 500);
+}
+
+async function deleteTodo(id, row) {
+  await fetch(`${API}/todos/${id}`, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+  row.style.opacity = '0'; row.style.transform = 'translateX(-20px)'; row.style.transition = 'all .3s';
+  setTimeout(() => { loadTodos(); loadHome(); }, 400);
+}
+
+async function addTodo() {
+  const title = (document.getElementById('newTitle').value || document.getElementById('newTitle2').value || '').trim();
+  const due = (document.getElementById('newDue').value || document.getElementById('newDue2').value || '');
+  const plat = (document.getElementById('newPlat').value || document.getElementById('newPlat2').value || 'both');
+  if (!title || !due) return toast('请填写标题和时间');
+  try {
+    await fetch(`${API}/todos`, {method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({title,due_at:new Date(due).toISOString(),platform:plat})});
+    hideAddForm(); toast('已创建'); loadTodos(); loadHome();
+  } catch(e) { toast('创建失败'); }
+}
+
+function showAddForm(from) {
+  if (from === 'todos') document.getElementById('addFormTodos').style.display = 'flex';
+  else document.getElementById('addFormHome').style.display = 'flex';
+}
+function hideAddForm() {
+  document.getElementById('addFormHome').style.display = 'none';
+  document.getElementById('addFormTodos').style.display = 'none';
+}
+
+// ─── Chat ─────────────────────────────
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim(); if (!msg) return;
+  const area = document.getElementById('chatMsgs');
+  const me = document.createElement('div'); me.className = 'chat-bubble bubble-me'; me.textContent = msg;
+  area.appendChild(me); input.value = ''; me.scrollIntoView({behavior:'smooth'});
+  setTimeout(() => toast('ZL 正在回复...'), 300);
+}
+
+// ─── Files ─────────────────────────────
+async function loadFiles() {
+  // Simulated for now - will be replaced with server file API
+  document.getElementById('filesList').innerHTML = `
+<div class="file-row" onclick="toast('64 个概念')"><div class="file-icon">📁</div><div style="flex:1">Wiki/concepts/</div><div style="color:#aaa;font-size:7px">64</div></div>
+<div class="file-row" onclick="toast('12 篇摘要')"><div class="file-icon">📁</div><div style="flex:1">Wiki/summaries/</div><div style="color:#aaa;font-size:7px">12</div></div>
+<div class="file-row" onclick="toast('14 个实体')"><div class="file-icon">📁</div><div style="flex:1">Wiki/entities/</div><div style="color:#aaa;font-size:7px">14</div></div>
+<div class="file-row" onclick="toast('后端服务')"><div class="file-icon">📁</div><div style="flex:1">aeon/backend/</div><div style="color:#aaa;font-size:7px">1</div></div>
+`;
+}
+
+// ─── Toast ─────────────────────────────
+function toast(m) {
+  const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// ─── Init ──────────────────────────────
+if (token) { go('home'); }
+loadHome();
+</script>
+</body>
+</html>

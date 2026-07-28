@@ -172,6 +172,36 @@ def toggle_schedule(sch_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"active": sch.active}
 
+# ─── File Browser ────────────────────────
+@app.get("/api/files")
+def list_files(path: str = "/root", user: dict = Depends(require_admin)):
+    import os
+    target = os.path.abspath(path)
+    if not target.startswith("/root"):
+        raise HTTPException(403, "仅限于 /root 目录")
+    if not os.path.exists(target):
+        raise HTTPException(404, "目录不存在")
+    items = []
+    for name in sorted(os.listdir(target)):
+        full = os.path.join(target, name)
+        is_dir = os.path.isdir(full)
+        size = 0 if is_dir else os.path.getsize(full)
+        items.append({"name": name, "is_dir": is_dir, "size": size, "path": full})
+    return {"path": target, "items": items}
+
+@app.get("/api/files/content")
+def read_file(path: str, user: dict = Depends(require_admin)):
+    import os
+    target = os.path.abspath(path)
+    if not target.startswith("/root"):
+        raise HTTPException(403, "仅限于 /root 目录")
+    if not os.path.exists(target) or os.path.isdir(target):
+        raise HTTPException(404)
+    if os.path.getsize(target) > 1024 * 100:
+        raise HTTPException(400, "文件过大")
+    with open(target) as f:
+        return {"path": target, "content": f.read()}
+
 # ─── Health ─────────────────────────────
 @app.get("/api/health")
 def health():
@@ -191,10 +221,13 @@ def check_and_push():
     finally:
         db.close()
 
-# ─── Scheduler ──────────────────────────
+# ─── WebSocket ──────────────────────────
 scheduler = BackgroundScheduler()
 scheduler.add_job(check_and_push, 'interval', seconds=30, id='push_engine')
 scheduler.start()
+
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 # ─── WebSocket ──────────────────────────
 @app.websocket("/ws")
@@ -206,6 +239,14 @@ async def websocket_endpoint(ws: WebSocket):
             await ws.send_text(json.dumps({"echo": data, "time": datetime.utcnow().isoformat()}))
     except WebSocketDisconnect:
         pass
+
+# ─── Static Files (must be last) ─────────
+frontend_path = Path(__file__).parent.parent / "frontend"
+assets_path = Path(__file__).parent.parent / "assets"
+if frontend_path.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
+if assets_path.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
 
 # ─── Startup ────────────────────────────
 if __name__ == "__main__":
