@@ -21,6 +21,7 @@ SECRET_KEY = os.getenv("AEON_SECRET", "aeon-dev-secret-change-me")
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "aeon.db")
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 ADMIN_USERNAME = "Y"
+VALID_INVITE_CODES = {"AEON-2026", "ZERO-DEGREE", "PHILOSOPHY-144"}
 
 # ─── Database ───────────────────────────
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
@@ -71,6 +72,7 @@ class ScheduleCreate(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+    invite_code: str = None  # 非管理员注册必填
 
 # ─── Auth ──────────────────────────────
 def create_token(username: str, is_admin: bool = False) -> str:
@@ -104,6 +106,10 @@ def get_db():
 def login(body: LoginRequest):
     if body.username == ADMIN_USERNAME:
         return {"token": create_token(body.username, is_admin=True), "admin": True, "username": body.username}
+    if not body.invite_code or body.invite_code not in VALID_INVITE_CODES:
+        raise HTTPException(403, "邀请码无效")
+    if not body.password:
+        raise HTTPException(400, "需要设置密码")
     return {"token": create_token(body.username, is_admin=False), "admin": False, "username": body.username}
 
 @app.get("/api/me")
