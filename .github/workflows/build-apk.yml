@@ -16,10 +16,10 @@ jobs:
         with:
           node-version: '22'
       
-      - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli @capacitor/core @capacitor/android
+      - name: Install dependencies
+        run: npm install
       
-      - name: Initialize Android project
+      - name: Add Android platform
         run: npx cap add android
       
       - name: Sync web assets

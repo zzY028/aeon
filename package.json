@@ -1,0 +1,14 @@
+{
+  "name": "aeon",
+  "version": "1.0.0",
+  "description": "Aeon — 个人管家 · 手机控制中心",
+  "scripts": {
+    "build": "echo 'Static web app — no build step'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/cli": "^6.0.0"
+  },
+  "devDependencies": {}
+}
