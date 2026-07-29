@@ -54,6 +54,8 @@ class Schedule(Base):
 
 Base.metadata.create_all(bind=engine)
 
+import httpx
+
 # ─── App ───────────────────────────────
 app = FastAPI(title="Aeon", version="1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -206,6 +208,34 @@ def read_file(path: str, user: dict = Depends(require_admin)):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "time": datetime.utcnow().isoformat()}
+
+# ─── Tutor ──────────────────────────────
+DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
+
+class TutorQuestion(BaseModel):
+    message: str
+    history: list[dict] = []
+
+TUTOR_PROMPT = """你是高等数学家教。教学风格：先确认学生卡在哪里不要直接给答案，用苏格拉底式提问引导思考。讲到关键定理说明为什么重要。每道题讲完问"要不要做类似的题巩固"。遇ε-N语言或极限证明分步骤展示。用中文，语言简洁不堆砌术语。参考教材：同济八版高等数学。"""
+
+@app.post("/api/tutor")
+async def tutor(q: TutorQuestion):
+    if not DEEPSEEK_KEY:
+        raise HTTPException(500, "API Key 未配置")
+    messages = [{"role": "system", "content": TUTOR_PROMPT}]
+    for h in (q.history or [])[-10:]:
+        messages.append(h)
+    messages.append({"role": "user", "content": q.message})
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(DEEPSEEK_URL, json={
+            "model": "deepseek-v4-pro", "messages": messages,
+            "temperature": 0.3, "max_tokens": 2048
+        }, headers={"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"})
+        data = resp.json()
+    if "choices" not in data:
+        raise HTTPException(500, f"API 错误")
+    return {"answer": data["choices"][0]["message"]["content"]}
 
 # ─── Push Engine (scheduler callback) ───
 def check_and_push():
