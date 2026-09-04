@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.log
+server.log
+
+# 环境变量与密钥（勿提交）
+.env
+
+# 数据库备份（保留 data/aeon.db 本体，备份目录不进仓库）
+backups/
+
+# 数据目录（个人数据：数据库 + 书籍文件，不进公开仓库）
+data/
+
+# Node / Capacitor（构建产物，仓库只留配置）
+node_modules/
+android/
+ios/
+dist/
+
+# 系统
+.DS_Store
+Thumbs.db

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 设置 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
+<style>
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
+  .page-head .left{ flex:1; min-width:260px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(30px,4vw,44px); font-weight:700; line-height:1.15; margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif); font-style:italic; margin-top:8px; font-size:15px }
+
+  .sec{ margin-top:30px }
+  .sec h3{ font-family:var(--font-serif); font-size:18px; margin-bottom:14px;
+    padding-bottom:8px; border-bottom:var(--hairline) }
+
+  .bal-card{ display:flex; align-items:center; gap:20px; padding:24px; flex-wrap:wrap }
+  .bal-amount{ font-family:var(--font-mono); font-size:44px; color:var(--amber-hi); letter-spacing:-.03em }
+  .bal-amount small{ font-size:18px; color:var(--ink-faint) }
+  .bal-meta{ flex:1; min-width:200px }
+  .bal-meta .row{ display:flex; justify-content:space-between; font-size:13px; color:var(--ink-soft); padding:5px 0; border-bottom:var(--line-soft) }
+  .bal-meta .row b{ font-family:var(--font-mono); color:var(--ink) }
+  .bal-status{ font-size:12px; color:var(--amber); font-family:var(--font-mono) }
+
+  .set-row{ display:flex; align-items:center; gap:14px; padding:14px 6px; border-bottom:var(--line-soft); flex-wrap:wrap }
+  .set-row:last-child{ border-bottom:none }
+  .set-label{ flex:1; min-width:150px }
+  .set-label b{ font-size:14px }
+  .set-label span{ display:block; font-size:11.5px; color:var(--ink-faint); margin-top:2px }
+  .set-row .btn{ flex:none }
+  .toggle{ width:46px; height:26px; border-radius:99px; border:var(--hairline); background:var(--surface-2);
+    position:relative; cursor:pointer; transition:.2s; flex:none }
+  .toggle::after{ content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
+    background:var(--ink-faint); transition:.2s }
+  .toggle.on{ background:var(--amber); border-color:var(--amber) }
+  .toggle.on::after{ left:23px; background:var(--block-ink); box-shadow:0 0 8px var(--glow) }
+
+  .data-actions{ display:flex; gap:10px; flex-wrap:wrap }
+  .demo-tip{ font-size:11.5px; color:var(--ink-faint); margin-top:10px }
+
+  @media (max-width:880px){ .bal-amount{ font-size:34px } }
+</style>
+<script src="/static/common/aeon-modal.js"></script>
+</head>
+<body>
+
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>永恒 · 生活簿</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+      <a href="ledger.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+      <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+      <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+      <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+      <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a><a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+
+      <a href="settings.html" class="on"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z" opacity=".85"/></svg>
+        <span class="num">盈凸月 · 第 12 日</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="left">
+          <div class="smallcaps">Settings · 设置</div>
+          <h1>数据与设置</h1>
+          <div class="sub">账目、主题、备份——都在这里。</div>
+        </div>
+      </div>
+
+      <!-- 模型余额 -->
+      <div class="sec">
+        <h3>模型余额</h3>
+        <div class="card frame bal-card">
+          <div class="bal-amount"><span id="balNum">——</span><small id="balCur"> CNY</small></div>
+          <div class="bal-meta">
+            <div class="row"><span>模型</span><b>DeepSeek</b></div>
+            <div class="row"><span>状态</span><b id="balStatus">查询中…</b></div>
+          </div>
+          <button class="btn btn-primary" onclick="loadBalance()">↻ 刷新</button>
+        </div>
+      </div>
+
+      <!-- 外观 -->
+      <div class="sec">
+        <h3>外观</h3>
+        <div class="card frame" style="padding:6px 18px">
+          <div class="set-row">
+            <div class="set-label"><b>午夜胶片</b><span>深色主题（Kodak 夜扫质感）</span></div>
+            <div class="toggle on" id="themeToggle" onclick="toggleTheme()"></div>
+          </div>
+          <div class="set-row">
+            <div class="set-label"><b>阅读字号</b><span>书架阅读器正文大小</span></div>
+            <span style="font-family:var(--font-mono);color:var(--amber-hi)" id="sizeLabel">17px</span>
+            <button class="btn" onclick="adjSize(-1)">－</button>
+            <button class="btn" onclick="adjSize(1)">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据 -->
+      <div class="sec">
+        <h3>数据中心</h3>
+        <div class="card frame" style="padding:18px">
+          <div class="data-actions">
+            <button class="btn" onclick="exportJSON()">⬇ 导出 JSON</button>
+            <button class="btn" onclick="importJSON()">⬆ 导入 JSON</button>
+          </div>
+          <div class="demo-tip">导出会下载当前账号全部数据（JSON）。导入会覆盖现有数据（先确认再操作）。</div>
+        </div>
+      </div>
+
+      <!-- 账号 -->
+      <div class="sec">
+        <h3>账号</h3>
+        <div class="card frame" style="padding:6px 18px">
+          <div class="set-row">
+            <div class="set-label"><b>当前用户</b><span id="userLabel">—</span></div>
+            <button class="btn btn-wine" onclick="logout()">退出登录</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: hdr() };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─── 余额 ──────────────────────────────
+async function loadBalance(){
+  const st = document.getElementById('balStatus');
+  st.textContent = '查询中…';
+  try {
+    const d = await api('/api/balance', 'POST', { provider: 'deepseek' });
+    document.getElementById('balNum').textContent = d.balance.toFixed(2);
+    document.getElementById('balCur').textContent = ' ' + d.currency;
+    st.textContent = d.is_available ? '正常' : '不可用';
+  } catch(e) {
+    document.getElementById('balNum').textContent = '——';
+    st.textContent = e.message;
+  }
+}
+
+// ─── 主题 ──────────────────────────────
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur === 'dark' ? '' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('aeon_theme', nxt || 'light');
+  document.getElementById('themeToggle').classList.toggle('on', nxt === 'dark');
+}
+
+// ─── 阅读字号 ──────────────────────────
+function adjSize(d){
+  let sz = parseInt(localStorage.getItem('aeon_read_size') || '17');
+  sz = Math.min(26, Math.max(14, sz + d));
+  localStorage.setItem('aeon_read_size', sz);
+  document.getElementById('sizeLabel').textContent = sz + 'px';
+}
+
+// ─── 数据导出/导入 ─────────────────────
+async function exportJSON(){
+  const modules = ['ledger','habits','schedule','wishes','media','books'];
+  const all = {};
+  for (const m of modules){
+    try { all[m] = await api('/api/' + m); } catch(e) { all[m] = []; }
+  }
+  const blob = new Blob([JSON.stringify(all, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'aeon_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+function importJSON(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = async () => {
+      if (!(await aeonConfirm('导入会覆盖当前数据，确定继续？'))) return;
+      try {
+        const data = JSON.parse(r.result);
+        const msg = await api('/api/import', 'POST', data);
+        await aeonAlert(msg.message || '导入完成');
+      } catch(err) { await aeonAlert('导入失败：' + err.message); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+// ─── 账号 ──────────────────────────────
+async function loadUser(){
+  try {
+    const me = await api('/api/me');
+    document.getElementById('userLabel').textContent = me.username + (me.is_admin ? '（管理员）' : '');
+  } catch(e) { document.getElementById('userLabel').textContent = '—'; }
+}
+function logout(){
+  localStorage.removeItem('aeon_token');
+  localStorage.removeItem('aeon_user');
+  location.href = 'index.html';
+}
+
+// ─── 启动 ──────────────────────────────
+const savedTheme = localStorage.getItem('aeon_theme');
+if (savedTheme === 'light'){
+  document.documentElement.removeAttribute('data-theme');
+  document.getElementById('themeToggle').classList.remove('on');
+}
+document.getElementById('sizeLabel').textContent =
+  (localStorage.getItem('aeon_read_size') || '17') + 'px';
+loadBalance();
+loadUser();
+</script>
+</body>
+</html>

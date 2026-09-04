@@ -1,243 +1,553 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Aeon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 今日指数 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
-body{background:#e8e8e2;display:flex;justify-content:center;align-items:center}
-.app{width:100%;max-width:430px;height:100%;background:#fff;display:flex;flex-direction:column;position:relative;overflow:hidden}
-@media(min-width:500px){.app{border:1px solid #ddd;border-radius:22px;height:852px}}
-.screen{display:none;flex:1;flex-direction:column;padding:max(14px,3vw);overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fadeIn .2s ease}
-.screen.active{display:flex}
-@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
-.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:max(8px,2vw)}
-.back-btn{font-size:clamp(7px,1.8vw,8px);color:#aaa;cursor:pointer}
-.top-title{font-size:clamp(9px,2.2vw,11px);color:#1a1a1a;font-weight:500}
-.moon-icon{width:clamp(22px,5.5vw,28px);height:clamp(22px,5.5vw,28px);opacity:.85;flex-shrink:0}
-.moon-icon img{width:100%;height:100%;object-fit:contain}
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,1.3vw,7px);margin-bottom:clamp(6px,1.5vw,8px)}
-.stat-box{border:1px solid #e8e8e8;border-radius:clamp(7px,1.8vw,9px);padding:clamp(7px,1.8vw,9px) clamp(8px,2vw,11px);background:#fafaf7;cursor:pointer;transition:all .12s}
-.stat-box:active{background:#f0f0eb}
-.stat-val{font-size:clamp(14px,3.8vw,18px);color:#1a1a1a;font-weight:500}
-.stat-label{font-size:clamp(6px,1.5vw,7px);color:#aaa;text-transform:uppercase;letter-spacing:.5px}
-.chips{display:flex;gap:clamp(3px,.8vw,5px);margin:clamp(5px,1.3vw,7px) 0}
-.chip{border:1px solid #eee;border-radius:10px;padding:clamp(4px,1vw,5px) clamp(7px,1.8vw,9px);font-size:clamp(6px,1.5vw,7px);color:#666;background:#fafaf7;cursor:pointer;transition:all .12s}
-.chip:active{background:#e8e8e2}
-.list-block{border:1px solid #eee;border-radius:clamp(7px,1.8vw,9px);overflow:hidden;background:#fafaf7;margin-bottom:6px}
-.list-row{display:flex;align-items:center;padding:clamp(7px,1.8vw,9px);border-bottom:1px solid #f0f0f0;font-size:clamp(7px,1.8vw,9px);gap:clamp(5px,1.3vw,7px);cursor:pointer;transition:all .12s}
-.list-row:last-child{border:none}.list-row:active{background:#f0f0eb}
-.star-bullet{width:clamp(8px,2vw,10px);height:clamp(8px,2vw,10px);opacity:.35;flex-shrink:0}
-.star-bullet img{width:100%;height:100%;object-fit:contain}
-.checkbox{width:clamp(11px,2.8vw,14px);height:clamp(11px,2.8vw,14px);border:1.5px solid #1a1a1a;border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:clamp(6px,1.5vw,8px)}
-.checkbox.done{background:#1a1a1a;color:#fff}
-.fab{position:absolute;bottom:max(16px,4vw);right:max(14px,3.5vw);width:clamp(26px,6.5vw,30px);height:clamp(26px,6.5vw,30px);border:1.5px solid #1a1a1a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#1a1a1a;background:#fafaf7;cursor:pointer;z-index:9}
-.fab:active{transform:scale(.9)}
-.chat-area{flex:1;display:flex;flex-direction:column;gap:4px;padding:2px 0;overflow-y:auto}
-.chat-bubble{padding:clamp(5px,1.3vw,7px) clamp(7px,1.8vw,9px);border-radius:8px;font-size:clamp(7px,1.7vw,8px);max-width:75%;line-height:1.4}
-.bubble-me{background:#1a1a1a;color:#fff;align-self:flex-end;border-bottom-right-radius:2px}
-.bubble-you{border:1px solid #e0e0e0;align-self:flex-start;border-bottom-left-radius:2px;background:#fafaf7}
-.chat-bar{display:flex;border:1px solid #eee;border-radius:14px;padding:3px;margin:8px 0 14px}
-.chat-in{flex:1;border:none;font-size:clamp(7px,1.7vw,8px);padding:6px 8px;background:transparent;outline:none}
-.chat-send{font-size:12px;padding:4px 8px;cursor:pointer;color:#1a1a1a}
-.file-row{display:flex;align-items:center;padding:clamp(7px,1.8vw,9px) 0;border-bottom:1px solid #f0f0f0;font-size:clamp(7px,1.8vw,9px);gap:8px;cursor:pointer}
-.file-row:active{opacity:.6}.file-icon{font-size:clamp(9px,2.3vw,12px);width:24px;text-align:center}
-.brief-card{border:1px solid #eee;border-radius:10px;padding:12px;background:#fafaf7;margin:4px 0}
-.brief-chapter{font-size:clamp(8px,2vw,9px);font-weight:600;margin-bottom:4px}
-.brief-text{font-size:clamp(7px,1.7vw,8px);color:#555;line-height:1.6}
-.toast{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:clamp(7px,1.7vw,8px);padding:6px 16px;border-radius:10px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:20}
-.toast.show{opacity:1}
-.login-form{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:80px}
-.login-input{width:100%;max-width:280px;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;background:#fafaf7}
-.login-input:focus{border-color:#1a1a1a}
-.login-btn{width:100%;max-width:280px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;letter-spacing:1px;cursor:pointer}
-.add-form{display:flex;flex-direction:column;gap:8px;padding:12px;background:#fafaf7;border:1px solid #eee;border-radius:10px;margin:8px 0}
-.add-form input,.add-form select{border:1px solid #ddd;border-radius:6px;padding:8px 10px;font-size:clamp(7px,1.8vw,9px);background:#fff;outline:none}
-.add-form input:focus{border-color:#1a1a1a}
-.form-btns{display:flex;gap:6px}.btn-sm{flex:1;padding:6px;border-radius:6px;font-size:clamp(6px,1.5vw,8px);cursor:pointer;text-align:center;border:1px solid #ddd;background:#fff}.btn-sm.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-</style></head><body>
+  /* ===== 页头 ===== */
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
+  .page-head .left{ flex:1; min-width:260px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(30px,4vw,44px);
+    font-weight:700; line-height:1.15; margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif);
+    font-style:italic; margin-top:8px; font-size:15px }
+  .date-block{ text-align:right; font-family:var(--font-mono) }
+  .date-block .d{ font-size:26px; color:var(--amber-hi); letter-spacing:-.02em }
+  .date-block .w{ font-size:11px; color:var(--ink-faint); letter-spacing:.2em; margin-top:2px }
+  .head-actions{ display:flex; gap:10px; align-items:center }
+
+  /* ===== 首屏：轨道指数环 + 四维 ===== */
+  .hero{ display:grid; grid-template-columns:400px 1fr; gap:28px; align-items:stretch }
+  .orbit-card{ display:flex; align-items:center; justify-content:center; padding:28px 16px }
+  .orbit-card svg{ max-width:340px; width:100% }
+  .dims{ display:flex; flex-direction:column; justify-content:center; gap:20px; padding:26px }
+  .dim-row{ display:grid; grid-template-columns:34px 86px 1fr 52px; gap:12px; align-items:center }
+  .dim-row .ic{ width:20px;height:20px;color:var(--amber) }
+  .dim-row .nm{ font-size:14px }
+  .dim-row .pc{ font-family:var(--font-mono); font-size:15px; text-align:right; color:var(--amber-hi) }
+  .dim-row .tip{ grid-column:3 / 5; font-size:12px; color:var(--ink-faint); margin-top:2px }
+
+  /* ===== 速览卡 ===== */
+  .quick{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px }
+  .quick .big{ font-family:var(--font-mono); font-size:32px; letter-spacing:-.03em; margin:6px 0 2px }
+  .quick .cap{ color:var(--ink-faint); font-size:12px }
+  .quick .note{ margin-top:14px; font-size:12.5px; color:var(--ink-soft) }
+  .quick .note b{ color:var(--wine) }
+  .dots{ display:flex; gap:7px; margin-top:12px }
+  .dots i{ width:14px;height:14px;border-radius:50%;border:1px solid var(--line) }
+  .dots i.done{ background:var(--amber); border-color:var(--amber); box-shadow:0 0 8px var(--glow) }
+  .mini-flow{ margin-top:12px; display:flex; flex-direction:column; gap:7px; font-size:12.5px; color:var(--ink-soft) }
+  .mini-flow span{ display:flex; align-items:center; gap:8px }
+  .mini-flow .dotp{ width:7px;height:7px;border-radius:50%;background:var(--amber);flex:none }
+  .mini-flow .dotp.w{ background:var(--wine) }
+
+  /* ===== 响应式 ===== */
+  @media (max-width:1080px){ .hero{ grid-template-columns:340px 1fr } }
+  @media (max-width:880px){
+    .hero{ grid-template-columns:1fr }
+    .quick{ grid-template-columns:1fr }
+    .date-block{ text-align:left }
+  }
+</style>
+<script src="/static/common/aeon-modal.js"></script>
+<script src="/static/common/aeon-data.js"></script>
+<script src="/static/common/aeon-subtitle.js"></script>
+</head>
+<body>
+
+<!-- 胶片质感层：颗粒 / 暗角 / 漏光 -->
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+<div class="aeon-subtitle" id="aeonSubtitle"></div>
 
 <div class="app">
-<!-- LOGIN -->
-<div class="screen active" id="login">
-<div style="text-align:center;padding-top:60px"><div style="width:48px;height:48px;border:2px solid #1a1a1a;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;position:relative"><div style="width:10px;height:10px;background:#1a1a1a;border-radius:50%;position:absolute;top:10px;right:10px"></div></div><div style="font-size:16px;font-weight:600;letter-spacing:4px;margin-bottom:24px">A e o n</div></div>
-<div class="login-form">
-<input class="login-input" id="loginUser" placeholder="用户名">
-<input class="login-input" id="loginPwd" placeholder="密码">
-<input class="login-input" id="loginInvite" placeholder="邀请码（管理员留空）">
-<button class="login-btn" onclick="doLogin()">登 录</button>
-</div></div>
+  <!-- ===== 桌面侧栏 ===== -->
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>EST. MCMXCIX</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html" class="on">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+      <a href="ledger.html">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+      <a href="habits.html">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+      <a href="schedule.html">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+      <a href="wishlist.html">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+      <a href="media.html">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+      <a href="briefing.html">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a>
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
 
-<!-- HOME -->
-<div class="screen" id="home">
-<div class="top-bar"><span style="font-size:clamp(7px,1.8vw,8px);color:#aaa">Aeon</span><div class="moon-icon"><img src="/moon.png" id="homeMoon" alt=""></div></div>
-<div class="stat-row"><div class="stat-box" onclick="go('todos')"><div class="stat-val" id="todoCount">0</div><div class="stat-label">待办</div></div><div class="stat-box"><div class="stat-val">——</div><div class="stat-label">余额</div></div></div>
-<div class="chips"><span class="chip" onclick="go('chat')">对话</span><span class="chip" onclick="go('briefing')">早报</span><span class="chip" onclick="go('files')">文件</span><span class="chip" onclick="go('wiki')">Wiki</span></div>
-<div class="list-block"><div class="list-row" onclick="go('todos')"><div class="star-bullet" id="homeStar"></div><div style="flex:1" id="homeTodoText">加载中...</div></div></div>
-<div class="fab" onclick="showAddForm('home')">+</div>
-<div class="add-form" id="addFormHome" style="display:none"><input id="newTitle" placeholder="待办标题"><input id="newDue" type="datetime-local" placeholder="截止时间"><select id="newPlat"><option value="both">微信+飞书</option><option value="weixin">仅微信</option><option value="feishu">仅飞书</option></select><div class="form-btns"><button class="btn-sm" onclick="hideAddForm()">取消</button><button class="btn-sm primary" onclick="addTodo()">新建</button></div></div>
+
+      <a href="settings.html">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <button class="btn" id="themeBtn">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z"/></svg>
+        切换晨昏
+      </button>
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--amber)">
+          <circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="num" id="moonLabel">盈凸月 · WAXING</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== 主区 ===== -->
+  <main class="main"><div class="wrap">
+
+    <header class="page-head">
+      <div class="left">
+        <div class="smallcaps" id="reelLine">REEL 27 · SUNDAY · AUG 09 · 2026</div>
+        <h1 class="hal" id="greeting">晚上好。</h1>
+        <p class="sub" id="greetSub">胶片转到第 27 格，今天还剩一场黄昏。</p>
+      </div>
+      <div class="date-block">
+        <div class="d" id="dateBig">08 / 09</div>
+        <div class="w" id="dateWeek">星期日</div>
+      </div>
+    </header>
+
+    <!-- 今日胶片：问候插画横幅（晨/昏两版自动切换） -->
+    <div class="filmstrip">
+      <img class="still" id="greetImg" src="/static/assets/decor/greeting-dusk.png" alt="今日胶片"
+           onerror="this.parentElement.style.display='none'">
+    </div>
+
+    <!-- 生活指数：同心轨道环 -->
+    <section class="hero" style="margin-top:26px">
+      <div class="card frame orbit-card">
+        <svg viewBox="0 0 320 320" role="img" aria-label="今日生活指数 82">
+          <defs>
+            <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="3.2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- 轨道底环 -->
+          <g fill="none" stroke-width="7" opacity=".9">
+            <circle cx="160" cy="160" r="140" stroke="currentColor" opacity=".10"/>
+            <circle cx="160" cy="160" r="116" stroke="currentColor" opacity=".10"/>
+            <circle cx="160" cy="160" r="92"  stroke="currentColor" opacity=".10"/>
+            <circle cx="160" cy="160" r="68"  stroke="currentColor" opacity=".10"/>
+          </g>
+          <!-- 四维轨道进度（记账76 / 习惯88 / 日程70 / 书影音92） -->
+          <g fill="none" stroke-width="7" stroke-linecap="round" transform="rotate(-90 160 160)" filter="url(#glow)">
+            <circle cx="160" cy="160" r="140" stroke="#e8bd7d" class="orbit" data-dash="668.5 879.7"/>
+            <circle cx="160" cy="160" r="116" stroke="#d4a053" class="orbit" data-dash="641.4 728.9"/>
+            <circle cx="160" cy="160" r="92"  stroke="#b97f2e" class="orbit" data-dash="404.6 578.1"/>
+            <circle cx="160" cy="160" r="68"  stroke="#8b5a2b" class="orbit" data-dash="393.1 427.3"/>
+          </g>
+          <!-- 行星点 -->
+          <g filter="url(#glow)">
+            <circle cx="20.3"  cy="151.2" r="6"   fill="#e8bd7d"/>
+            <circle cx="80.6"  cy="75.4"  r="5.5" fill="#d4a053"/>
+            <circle cx="72.5"  cy="188.4" r="5"   fill="#b97f2e"/>
+            <circle cx="127.2" cy="100.4" r="4.5" fill="#8b5a2b"/>
+          </g>
+          <text x="160" y="166" text-anchor="middle" class="num hal"
+                font-size="58" fill="var(--amber-hi)" font-family="Courier New,monospace">82</text>
+          <text x="160" y="192" text-anchor="middle" font-size="9.5" letter-spacing="3"
+                fill="var(--ink-faint)" font-family="Courier New,monospace">LIFE INDEX · TODAY</text>
+        </svg>
+      </div>
+
+      <div class="card dims">
+        <div class="dim-row">
+          <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10.5h18"/><path d="M16 15.5h2"/><path d="M7 6V4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V6"/></svg>
+          <span class="nm">记账</span>
+          <div class="pbar"><i style="width:0" data-w="76%"></i></div><span class="pc">76</span>
+          <span class="tip">本月节奏偏快 · 比匀速多花 ¥1,980，餐饮是大头</span>
+        </div>
+        <div class="dim-row">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 3.5V8h-4.5"/><path d="M9 12.2l2.2 2.2 4.3-4.4"/></svg>
+          <span class="nm">习惯</span>
+          <div class="pbar"><i style="width:0" data-w="88%"></i></div><span class="pc">88</span>
+          <span class="tip">状态很好 · 「晨间阅读」已连续 12 天</span>
+        </div>
+        <div class="dim-row">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M6 3v18"/><circle cx="6" cy="7" r="2.2"/><circle cx="6" cy="17" r="2.2"/><path d="M9.5 7H21M9.5 17H16"/></svg>
+          <span class="nm">日程</span>
+          <div class="pbar"><i style="width:0" data-w="70%"></i></div><span class="pc">70</span>
+          <span class="tip">2 件逾期已顺延到今天 · 先处理 P0</span>
+        </div>
+        <div class="dim-row">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v17.5H7.5A2.5 2.5 0 0 0 5 22z"/><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20"/><path d="M10 6.5h6"/></svg>
+          <span class="nm">书影音</span>
+          <div class="pbar"><i style="width:0" data-w="92%"></i></div><span class="pc">92</span>
+          <span class="tip">阅读进度 · 正在读的书会显示在这里</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 今天要处理 -->
+    <section>
+      <div class="sec-head">
+        <h2>今天要处理</h2><span class="en">TODAY'S CUT · 4 TAKES</span><span class="sp"></span>
+        <span class="smallcaps">逾期不消失 · 自动顺延</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px" id="ticketList">
+        <div class="ticket overdue">
+          <span class="t-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5L21.5 20h-19z"/><path d="M12 9.5V14"/><path d="M12 16.8v.4"/></svg></span>
+          <div class="t-body"><b>给房东转 8 月房租</b><small>日程 · 原定 8 月 7 日 · 已顺延 2 天</small></div>
+          <span class="tag tag-p0">P0 · 逾期</span>
+          <button class="btn btn-wine" onclick="resolveTicket(this)">立即处理</button>
+        </div>
+        <div class="ticket">
+          <span class="t-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 3.5V8h-4.5"/><path d="M9 12.2l2.2 2.2 4.3-4.4"/></svg></span>
+          <div class="t-body"><b>午间冥想 10 分钟</b><small>习惯 · 连续 6 天 · 今日未打卡</small></div>
+          <span class="tag">习惯</span>
+          <button class="btn" onclick="resolveTicket(this)">打卡</button>
+        </div>
+        <div class="ticket">
+          <span class="t-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 12V5a1.5 1.5 0 0 1 1.5-1.5h7L21.5 13l-8.5 8.5z"/><circle cx="8.5" cy="8.5" r="1.6"/></svg></span>
+          <div class="t-body"><b>「机械键盘」冷静期已满 7 天</b><small>待买 · 8 月 2 日标记为「需要」· 还想要吗？</small></div>
+          <span class="tag">待买</span>
+          <button class="btn" onclick="resolveTicket(this)">去看看</button>
+        </div>
+        <div class="ticket">
+          <span class="t-ic"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10.5h18"/><path d="M16 15.5h2"/><path d="M7 6V4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V6"/></svg></span>
+          <div class="t-body"><b>昨天还没有记账</b><small>记账 · 补一笔只要 10 秒</small></div>
+          <span class="tag">记账</span>
+          <a class="btn" href="ledger.html">补一笔</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 模块速览 -->
+    <section>
+      <div class="sec-head">
+        <h2>速览</h2><span class="en">PREVIEW REEL</span><span class="sp"></span>
+      </div>
+      <div class="quick">
+        <div class="card">
+          <div class="smallcaps">LEDGER · 本月支出</div>
+          <div class="big num">¥3,286</div>
+          <div class="cap">预算 ¥4,500 · 已用 73%</div>
+          <div class="pbar" style="margin-top:14px"><i style="width:0" data-w="73%"></i>
+            <span class="mark" style="left:29%" data-t="匀速"></span></div>
+          <div class="note">比匀速 <b>快 ¥1,980</b> · 建议收紧餐饮与购物</div>
+        </div>
+        <div class="card">
+          <span class="sticker">Streak 12</span>
+          <div class="smallcaps">HABITS · 今日习惯</div>
+          <div class="big num">5 <small style="font-size:16px;color:var(--ink-faint)">/ 7</small></div>
+          <div class="cap">晨间阅读连续 12 天</div>
+          <div class="dots"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i></i><i></i></div>
+          <div class="note">还差「午间冥想」「23 点前睡」</div>
+        </div>
+        <div class="card">
+          <div class="smallcaps">SCHEDULE · 今日日程</div>
+          <div class="big num">3 <small style="font-size:16px;color:var(--wine)">· 1 逾期</small></div>
+          <div class="cap">逾期自动顺延 · 藏不住</div>
+          <div class="mini-flow">
+            <span><i class="dotp w"></i>转房租（顺延 2 天 · P0）</span>
+            <span><i class="dotp"></i>15:00 设计评审</span>
+            <span><i class="dotp"></i>20:30 给妈妈打电话</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div></main>
 </div>
 
-<!-- TODOS -->
-<div class="screen" id="todos">
-<div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">待办</div></div>
-<div class="list-block" id="todosList"></div>
-<div class="fab" onclick="showAddForm('todos')">+</div>
-<div class="add-form" id="addFormTodos" style="display:none"><input id="newTitle2" placeholder="待办标题"><input id="newDue2" type="datetime-local"><select id="newPlat2"><option value="both">微信+飞书</option><option value="weixin">仅微信</option><option value="feishu">仅飞书</option></select><div class="form-btns"><button class="btn-sm" onclick="hideAddForm()">取消</button><button class="btn-sm primary" onclick="addTodo()">新建</button></div></div>
-</div>
-
-<!-- CHAT -->
-<div class="screen" id="chat"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">对话 · ZL</div></div><div class="chat-area" id="chatMsgs"><div class="chat-bubble bubble-you">嗨，我是 ZL。在这里你可以直接跟我聊 ✨</div></div><div class="chat-bar"><input class="chat-in" id="chatInput" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendChat()"><span class="chat-send" onclick="sendChat()">↑</span></div></div>
-
-<!-- FILES -->
-<div class="screen" id="files"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">文件 /root/</div></div><div id="filesList"></div></div>
-
-<!-- BRIEFING -->
-<div class="screen" id="briefing"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">今日早报</div></div><div class="brief-card"><div class="brief-chapter">📖 苏菲的世界</div><div class="brief-text">今天的内容即将推送...</div><div class="brief-date" style="margin-top:6px">每天早上 07:00</div></div></div>
-
-<!-- WIKI -->
-<div class="screen" id="wiki"><div class="top-bar"><span class="back-btn" onclick="go('home')">← 返回</span><div class="top-title">Wiki</div></div><div style="border:1px solid #eee;border-radius:12px;padding:40px 20px;text-align:center;background:#fafaf7"><div style="font-size:clamp(8px,2vw,10px);color:#555">知识图谱</div><div style="font-size:clamp(6px,1.5vw,7px);color:#aaa;margin-top:4px">144 页 · 7 本书 · 64 概念</div></div></div>
-
-<div class="toast" id="toast"></div></div>
+<!-- ===== 移动端底导航 ===== -->
+<nav class="tabbar">
+  <a href="index.html" class="on"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+  <a href="ledger.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+  <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+  <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+  <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+  <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+  <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a><a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+  <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+</nav>
 
 <script>
-// ─── Config ─────────────────────────────
-const API = 'http://8.217.214.254:8000/api';
-let token = localStorage.getItem('aeon_token') || '';
-let username = localStorage.getItem('aeon_user') || '';
+/* ---------- 主题：晨昏切换（记忆选择） ---------- */
+const htmlEl = document.documentElement;
+htmlEl.dataset.theme = localStorage.getItem('aeon_theme') || 'dark';
+document.getElementById('themeBtn').onclick = () => {
+  const next = htmlEl.dataset.theme === 'dark' ? 'light' : 'dark';
+  htmlEl.dataset.theme = next;
+  localStorage.setItem('aeon_theme', next);
+};
 
-// ─── Navigation ────────────────────────
-function go(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if (id === 'home') loadHome();
-  if (id === 'todos') loadTodos();
-  if (id === 'files') loadFiles();
+/* ---------- API ---------- */
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: hdr() };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ showLogin(); throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
 }
 
-// ─── Auth ──────────────────────────────
-async function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPwd').value.trim();
-  const code = document.getElementById('loginInvite').value.trim();
-  if (!u) return toast('请输入用户名');
-  const body = {username: u, password: p};
-  if (code) body.invite_code = code;
+/* ---------- 登录 ---------- */
+async function showLogin(){
+  // Aeon 风格登录弹窗（用户名 + 密码）
+  const name = await aeonPrompt('Aeon 登录 · 用户名', 'Y');
+  if (name === null) return;
+  const pass = await aeonPrompt('密码', '');
+  if (pass === null) return;
   try {
-    const r = await fetch(`${API}/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const d = await r.json();
-    if (r.ok) {
-      token = d.token; username = d.username;
-      localStorage.setItem('aeon_token', token);
-      localStorage.setItem('aeon_user', username);
-      go('home');
-    } else { toast(d.detail || '登录失败'); }
-  } catch(e) { toast('网络错误'); }
+    const d = await api('/api/login','POST',{ username:name, password:pass });
+    TOKEN = d.token;
+    localStorage.setItem('aeon_token', d.token);
+    localStorage.setItem('aeon_user', d.username);
+    initData();
+  } catch(e) {
+    await aeonAlert('登录失败：' + e.message);
+  }
 }
 
-// ─── Home ──────────────────────────────
-async function loadHome() {
-  if (!token) { go('login'); return; }
+/* ---------- 首页数据（真实 API） ---------- */
+async function initData(){
   try {
-    const r = await fetch(`${API}/todos`, {headers:{'Authorization':`Bearer ${token}`}});
-    if (!r.ok) { if(r.status===401){go('login');return;} }
-    const todos = await r.json();
-    document.getElementById('todoCount').textContent = todos.length;
-    if (todos.length > 0) {
-      document.getElementById('homeTodoText').textContent = todos[0].title;
-    } else {
-      document.getElementById('homeTodoText').textContent = '暂无待办';
-    }
-  } catch(e) {}
-}
+    // ── 用缓存层：先渲染本地（秒开），后台刷新 ──
+    const today = new Date();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const statsKey = 'ledger_stats_' + mm;
 
-// ─── Todos ────────────────────────────
-async function loadTodos() {
-  if (!token) return;
-  const container = document.getElementById('todosList');
-  try {
-    const r = await fetch(`${API}/todos`, {headers:{'Authorization':`Bearer ${token}`}});
-    const todos = await r.json();
-    container.innerHTML = todos.length === 0 ? '<div style="text-align:center;color:#aaa;padding:30px;font-size:8px">暂无待办</div>' : '';
-    todos.forEach(t => {
-      const row = document.createElement('div'); row.className = 'list-row';
-      const cb = document.createElement('div'); cb.className = 'checkbox' + (t.done ? ' done' : ''); cb.textContent = '✓';
-      cb.onclick = (e) => { e.stopPropagation(); markDone(t.id, cb); };
-      const text = document.createElement('div'); text.style.flex = '1';
-      text.innerHTML = `<div style="font-size:clamp(7px,1.8vw,8px)${t.done?';text-decoration:line-through;opacity:.4':''}">${t.title}</div><div style="font-size:clamp(5px,1.3vw,6px);color:#aaa">${new Date(t.due_at).toLocaleString('zh-CN')} · ${t.platform}</div>`;
-      row.appendChild(cb); row.appendChild(text);
-      const del = document.createElement('div'); del.style.cssText = 'color:#aaa;font-size:12px;padding:4px;cursor:pointer'; del.textContent = '×';
-      del.onclick = (e) => { e.stopPropagation(); deleteTodo(t.id, row); };
-      row.appendChild(del);
-      container.appendChild(row);
+    // 账目统计（缓存优先）
+    const stats = await aeonData.getCached(statsKey, () => api('/api/ledger/stats?month=2026-' + mm));
+    renderLedger(stats);
+
+    // 日程（缓存优先）
+    const events = await aeonData.getCached('schedule_today', () => api('/api/schedule?view=today'));
+    renderTickets(events);
+
+    // 生活簿 → 动态四维指数（缓存优先）
+    try {
+      const book = await aeonData.getCached('life_book', () => api('/api/life/book'));
+      updateOrbit(book);
+    } catch(e) {}
+
+    // 定时刷新四维（60s 一次，保持动态）
+    setInterval(async () => {
+      try {
+        const book = await api('/api/life/book');
+        aeonData.writeCache('life_book', book);
+        updateOrbit(book);
+      } catch(e) {}
+    }, 60000);
+
+    // 监听后台刷新 → 重新渲染
+    window.addEventListener('aeon:data', e => {
+      const d = e.detail;
+      if (d.key === statsKey) renderLedger(d.data);
+      if (d.key === 'schedule_today') renderTickets(d.data);
+      if (d.key === 'life_book') updateOrbit(d.data);
     });
-  } catch(e) {}
+  } catch(e) { /* 未登录时已弹登录框 */ }
 }
 
-async function markDone(id, cb) {
-  cb.classList.add('done');
-  await fetch(`${API}/todos/${id}/done`, {method:'PUT',headers:{'Authorization':`Bearer ${token}`}});
-  setTimeout(() => { loadTodos(); loadHome(); }, 500);
+/* ── 动态四维指数：从生活簿实时计算 + 动画过渡 ── */
+function calcScore(book){
+  const lb = book.ledger || {};
+  const hb = book.habits || {};
+  const sb = book.schedule || {};
+  const rd = book.reading || [];
+
+  // 记账分：预算健康度（有收入参考；简化：支出越低于参考越好）
+  const monthOut = lb.month_out || 0;
+  const monthIn = lb.month_in || 0;
+  const budgetRef = Math.max(monthIn * 0.7, 1500); // 参考线：收入的 70% 或 1500
+  const ledgerScore = monthOut === 0 ? 85 : Math.max(20, Math.min(100, Math.round(100 - (monthOut / budgetRef) * 30)));
+
+  // 习惯分：今日完成率
+  const totalH = hb.total || 0;
+  const doneH = hb.done_today || 0;
+  const habitScore = totalH === 0 ? 50 : Math.round(doneH / totalH * 100);
+
+  // 日程分：今日完成率 + 逾期惩罚
+  const todayEvents = sb.today || [];
+  const doneEvents = todayEvents.filter(e => e.done).length;
+  const overdue = sb.today.filter(e => e.overdue).length;
+  const schedBase = todayEvents.length === 0 ? 80 : Math.round(doneEvents / todayEvents.length * 100);
+  const scheduleScore = Math.max(20, schedBase - overdue * 10);
+
+  // 书影音分：有在读的书加分
+  const mediaScore = rd.length > 0 ? Math.min(100, 60 + Math.round(rd[0].percent / 2)) : 40;
+
+  return { ledger: ledgerScore, habit: habitScore, schedule: scheduleScore, media: mediaScore };
 }
 
-async function deleteTodo(id, row) {
-  await fetch(`${API}/todos/${id}`, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
-  row.style.opacity = '0'; row.style.transform = 'translateX(-20px)'; row.style.transition = 'all .3s';
-  setTimeout(() => { loadTodos(); loadHome(); }, 400);
+function updateOrbit(book){
+  if (!book) return;
+  const scores = calcScore(book);
+  const score = Math.round((scores.ledger + scores.habit + scores.schedule + scores.media) / 4);
+
+  // 1. 中心数字（动画过渡）
+  const numEl = document.querySelector('.orbit-card svg text.num');
+  if (numEl){
+    const current = parseInt(numEl.textContent) || 0;
+    animateNum(numEl, current, score, 800);
+  }
+
+  // 2. 四维轨道环（dash 更新）
+  const orbits = document.querySelectorAll('.orbit');
+  const dims = [scores.ledger, scores.habit, scores.schedule, scores.media];
+  const radii = [140, 116, 92, 68];
+  orbits.forEach((c, i) => {
+    const circum = 2 * Math.PI * radii[i];
+    const dash = (circum * dims[i] / 100).toFixed(1) + ' ' + circum.toFixed(1);
+    c.setAttribute('data-dash', dash);
+    c.style.transition = 'stroke-dasharray .8s ease';
+    c.style.strokeDasharray = dash;
+  });
+
+  // 3. 四维文字行（进度条 + 百分比 + 提示）
+  const rows = document.querySelectorAll('.dim-row');
+  if (rows.length >= 4){
+    const tips = ['本月节奏', '习惯进展', '日程状态', '阅读进度'];
+    rows.forEach((row, i) => {
+      const bar = row.querySelector('.pbar i');
+      const pc = row.querySelector('.pc');
+      const tip = row.querySelector('.tip');
+      if (bar){ bar.style.transition = 'width .8s ease'; bar.style.width = dims[i] + '%'; }
+      if (pc) pc.textContent = dims[i];
+      if (tip) tip.textContent = dimTips[i](book);
+    });
+  }
 }
 
-async function addTodo() {
-  const title = (document.getElementById('newTitle').value || document.getElementById('newTitle2').value || '').trim();
-  const due = (document.getElementById('newDue').value || document.getElementById('newDue2').value || '');
-  const plat = (document.getElementById('newPlat').value || document.getElementById('newPlat2').value || 'both');
-  if (!title || !due) return toast('请填写标题和时间');
-  try {
-    await fetch(`${API}/todos`, {method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({title,due_at:new Date(due).toISOString(),platform:plat})});
-    hideAddForm(); toast('已创建'); loadTodos(); loadHome();
-  } catch(e) { toast('创建失败'); }
+const dimTips = [
+  b => { const lb = b.ledger || {}; return lb.month_out ? `本月支出 ¥${lb.month_out}，收入 ¥${lb.month_in}` : '本月还没有支出记录'; },
+  b => { const hb = b.habits || {}; return `今日完成 ${hb.done_today}/${hb.total} 项习惯`; },
+  b => { const sb = b.schedule || {}; return sb.today_count ? `今日 ${sb.today_count} 件事待办` : '今天日程空空的'; },
+  b => { const rd = b.reading || []; return rd.length ? `《${rd[0].title}》读到 ${rd[0].percent}%` : '书架还空着'; }
+];
+
+function animateNum(el, from, to, dur){
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
-function showAddForm(from) {
-  if (from === 'todos') document.getElementById('addFormTodos').style.display = 'flex';
-  else document.getElementById('addFormHome').style.display = 'flex';
-}
-function hideAddForm() {
-  document.getElementById('addFormHome').style.display = 'none';
-  document.getElementById('addFormTodos').style.display = 'none';
+function renderLedger(stats){
+  const ledgerNote = document.getElementById('ledgerNote');
+  if (ledgerNote) ledgerNote.innerHTML = `<b>${stats.expense.toFixed(0)}</b> 支出 · 预算 <b>3000</b>`;
 }
 
-// ─── Chat ─────────────────────────────
-function sendChat() {
-  const input = document.getElementById('chatInput');
-  const msg = input.value.trim(); if (!msg) return;
-  const area = document.getElementById('chatMsgs');
-  const me = document.createElement('div'); me.className = 'chat-bubble bubble-me'; me.textContent = msg;
-  area.appendChild(me); input.value = ''; me.scrollIntoView({behavior:'smooth'});
-  setTimeout(() => toast('ZL 正在回复...'), 300);
+function renderTickets(events){
+  const ticketList = document.getElementById('ticketList');
+  if (!ticketList) return;
+  if (!events.length){
+    ticketList.innerHTML = '<div class="ticket"><div class="t-body"><b>今天没有日程安排</b><div class="t-sub">自由的一天。</div></div></div>';
+  } else {
+    ticketList.innerHTML = events.map(e => `
+      <div class="ticket ${e.overdue ? 'overdue' : ''}" onclick="resolveTicket(this)">
+        <div class="t-body"><b>${esc(e.title)}</b>
+          <div class="t-sub">${e.time || '全天'} · ${e.priority === 0 ? 'P0 重要' : e.priority === 1 ? 'P1 普通' : 'P2 轻'}</div>
+        </div>
+        <button class="btn btn-wine" style="flex:none">完成</button>
+      </div>`).join('');
+  }
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- 问候语：早晚切换 + 晨昏插画（10 张按时段轮换） ---------- */
+const h = new Date().getHours();
+const greet = document.getElementById('greeting');
+const sub = document.getElementById('greetSub');
+const img = document.getElementById('greetImg');
+/* 每个时段一个插画池，按「日」随机轮换（用户分配：上午4/下午3/晚上3） */
+const POOL = {
+  morning:   ['greeting-01', 'greeting-05', 'greeting-07', 'greeting-dawn'],   // 山间晨光 / 车站 / 屋顶晨曦 / 小镇晨
+  afternoon: ['greeting-02', 'greeting-06', 'greeting-dusk'],                  // 海边日落 / 麦田暮色 / 小镇昏
+  night:     ['greeting-03', 'greeting-04', 'greeting-08']                     // 街灯★ / 书房台灯 / 天文台星空
+};
+let bucket, greetText, subText;
+/* 时段：7:00 上午开始 / 12:00 下午开始 / 19:00 晚上开始（用户 2.5 定稿） */
+if (h >= 7 && h < 12)      { bucket = 'morning';   greetText = '早上好。'; subText = '新的一天，像一卷刚开封的胶片。'; }
+else if (h >= 12 && h < 19){ bucket = 'afternoon'; greetText = '下午好。'; subText = '光线开始变软，正是做事的好时辰。'; }
+else                       { bucket = 'night';     greetText = '晚上好。'; subText = '胶片转到第 27 格，今天还剩一场黄昏。'; }
+greet.textContent = greetText;
+sub.textContent = subText;
+/* 随机选一张（而非固定日期取模） */
+const pool = POOL[bucket];
+img.src = '/static/assets/decor/' + pool[Math.floor(Math.random() * pool.length)] + '.png';
+
+/* ---------- 月相：按朔望月近似计算（历元 2000-01-06 新月） ---------- */
+(function(){
+  const SYNODIC = 29.53058867; // 朔望月天数
+  const EPOCH = Date.UTC(2000, 0, 6, 18, 14); // 已知新月时刻
+  const age = ((Date.now() - EPOCH) / 86400000) % SYNODIC; // 月龄 0-29.5
+  const idx = Math.min(7, Math.floor(age / SYNODIC * 8)); // 0-7 → 8 相
+  const NAMES = ['新月', '娥眉月', '上弦月', '盈凸月', '满月', '亏凸月', '下弦月', '残月'];
+  const MOON_FILES = ['moon-1-new','moon-2-waxcres','moon-3-firstq','moon-4-waxgib','moon-5-full','moon-6-wangib','moon-7-lastq','moon-8-wancres'];
+  const svg = document.querySelector('.moonbox svg');
+  if (svg) {
+    const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    img.setAttribute('href', '/static/assets/decor/' + MOON_FILES[idx] + '.svg');
+    img.setAttribute('width', '26');
+    img.setAttribute('height', '26');
+    img.setAttribute('x', '-1');
+    img.setAttribute('y', '-1');
+    svg.innerHTML = '';
+    svg.appendChild(img);
+  }
+  const label = document.getElementById('moonLabel');
+  if (label) label.textContent = NAMES[idx] + ' · 月龄 ' + Math.floor(age) + ' 日';
+})();
+const now = new Date();
+const wk = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][now.getDay()];
+const mm = String(now.getMonth()+1).padStart(2,'0'), dd = String(now.getDate()).padStart(2,'0');
+document.getElementById('dateBig').textContent = mm + ' / ' + dd;
+document.getElementById('dateWeek').textContent = wk;
+document.getElementById('reelLine').textContent =
+  'REEL 27 · ' + wk.replace('星期','').toUpperCase() + ' · ' + now.getFullYear() + '.' + mm + '.' + dd;
+
+/* ---------- 入场：进度环/进度条显影 ---------- */
+requestAnimationFrame(() => {
+  document.querySelectorAll('.orbit').forEach((c, i) => {
+    const dash = c.dataset.dash;
+    c.style.strokeDasharray = '0 9999';
+    c.style.transition = 'stroke-dasharray 1.2s cubic-bezier(.2,.8,.2,1) ' + (i * 0.15) + 's';
+    requestAnimationFrame(() => c.style.strokeDasharray = dash);
+  });
+  document.querySelectorAll('.pbar > i').forEach(el => {
+    setTimeout(() => el.style.width = el.dataset.w, 200);
+  });
+});
+
+/* ---------- 票券一键处理（演示） ---------- */
+function resolveTicket(btn){
+  const t = btn.closest('.ticket');
+  btn.textContent = '已处理'; btn.disabled = true;
+  t.style.opacity = '.45'; t.style.transition = '.4s';
+  t.querySelector('.t-body b').style.textDecoration = 'line-through';
 }
 
-// ─── Files ─────────────────────────────
-async function loadFiles() {
-  // Simulated for now - will be replaced with server file API
-  document.getElementById('filesList').innerHTML = `
-<div class="file-row" onclick="toast('64 个概念')"><div class="file-icon">📁</div><div style="flex:1">Wiki/concepts/</div><div style="color:#aaa;font-size:7px">64</div></div>
-<div class="file-row" onclick="toast('12 篇摘要')"><div class="file-icon">📁</div><div style="flex:1">Wiki/summaries/</div><div style="color:#aaa;font-size:7px">12</div></div>
-<div class="file-row" onclick="toast('14 个实体')"><div class="file-icon">📁</div><div style="flex:1">Wiki/entities/</div><div style="color:#aaa;font-size:7px">14</div></div>
-<div class="file-row" onclick="toast('后端服务')"><div class="file-icon">📁</div><div style="flex:1">aeon/backend/</div><div style="color:#aaa;font-size:7px">1</div></div>
-`;
-}
+/* ---------- 启动：登录 + 真实数据 ---------- */
+initData();
 
-// ─── Toast ─────────────────────────────
-function toast(m) {
-  const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 1500);
-}
-
-// ─── Init ──────────────────────────────
-if (token) { go('home'); }
-loadHome();
+// 页面字幕
+aeonSubtitle.show('index');
 </script>
 </body>
 </html>

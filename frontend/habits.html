@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 习惯 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
+<style>
+  /* ===== 习惯页 ===== */
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
+  .page-head .left{ flex:1; min-width:260px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(30px,4vw,44px); font-weight:700; line-height:1.15; margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif); font-style:italic; margin-top:8px; font-size:15px }
+  .date-block{ text-align:right; font-family:var(--font-mono) }
+  .date-block .d{ font-size:26px; color:var(--amber-hi); letter-spacing:-.02em }
+  .date-block .w{ font-size:11px; color:var(--ink-faint); letter-spacing:.2em; margin-top:2px }
+  .head-actions{ display:flex; gap:10px; align-items:center }
+
+  /* ===== 新增表单 ===== */
+  .add-form{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px }
+  .add-form input,.add-form select{
+    background:var(--surface); border:var(--hairline); border-radius:var(--radius-s);
+    color:var(--ink); padding:9px 12px; font-size:13.5px; font-family:inherit; outline:none;
+  }
+  .add-form input:focus,.add-form select:focus{ box-shadow:0 0 0 1px var(--amber), 0 0 12px var(--glow) }
+  .add-form .nm{ flex:1; min-width:160px }
+  .add-form .tg{ width:92px }
+  .add-form .un{ width:70px }
+
+  /* ===== 习惯卡片 ===== */
+  .habit-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; margin-top:18px }
+  .habit-card{ position:relative; display:flex; flex-direction:column; gap:12px; padding-top:26px }
+  .habit-card .h-name{ font-family:var(--font-serif); font-size:19px; font-weight:700; display:flex; align-items:center; gap:10px }
+  .habit-card .h-name .type-tag{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.14em; color:var(--amber);
+    border:1px solid var(--line); border-radius:5px; padding:2px 7px; text-transform:uppercase }
+  .habit-card .h-meta{ display:flex; gap:16px; font-size:12px; color:var(--ink-soft) }
+  .habit-card .h-meta b{ font-family:var(--font-mono); color:var(--amber-hi); font-size:14px }
+  .habit-card .h-rate{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--ink-faint) }
+  .habit-card .h-rate .pbar{ flex:1 }
+  .habit-card .h-actions{ display:flex; gap:8px; margin-top:4px }
+  .habit-card .h-actions .btn{ flex:1; justify-content:center }
+  .check-btn{ min-height:44px }
+  .check-btn.done{ background:var(--amber); color:var(--block-ink); border-color:var(--amber); box-shadow:0 0 16px var(--glow) }
+
+  /* ===== 热力图 ===== */
+  .heatmap-wrap{ margin-top:26px }
+  .hm{ display:grid; grid-template-columns:repeat(30,1fr); gap:3px; margin-top:12px }
+  .hm .cell{ aspect-ratio:1; border-radius:3px; background:var(--line-soft); position:relative }
+  .hm .cell.l1{ background:color-mix(in srgb, var(--amber) 22%, var(--line-soft)) }
+  .hm .cell.l2{ background:color-mix(in srgb, var(--amber) 45%, var(--surface-2)) }
+  .hm .cell.l3{ background:color-mix(in srgb, var(--amber) 68%, var(--surface-2)) }
+  .hm .cell.l4{ background:var(--amber); box-shadow:0 0 8px var(--glow) }
+  .hm .cell:hover::after{
+    content:attr(data-t); position:absolute; bottom:130%; left:50%; transform:translateX(-50%);
+    background:var(--block); color:var(--block-ink); font-size:10px; padding:3px 8px; border-radius:5px;
+    white-space:nowrap; z-index:5; font-family:var(--font-mono)
+  }
+  .hm-labels{ display:flex; justify-content:space-between; margin-top:8px; font-family:var(--font-mono); font-size:10px; color:var(--ink-faint) }
+
+  /* ===== 响应式 ===== */
+  @media (max-width:880px){
+    .habit-grid{ grid-template-columns:1fr }
+    .hm{ grid-template-columns:repeat(15,1fr); grid-auto-rows:14px }
+    .date-block{ text-align:left }
+  }
+</style>
+<script src="/static/common/aeon-modal.js"></script>
+<script src="/static/common/aeon-data.js"></script>
+<script src="/static/common/aeon-stepper.js"></script>
+<script src="/static/common/aeon-subtitle.js"></script>
+</head>
+<body>
+
+<!-- 胶片质感层 -->
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+<div class="aeon-subtitle" id="aeonSubtitle"></div>
+
+<div class="app">
+  <!-- 侧栏 -->
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>永恒 · 生活簿</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+      <a href="ledger.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+      <a href="habits.html" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+      <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+      <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+      <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a><a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+
+      <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z" opacity=".85"/></svg>
+        <span class="num">盈凸月 · 第 12 日</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 主区 -->
+  <main class="main">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="left">
+          <div class="smallcaps">Habits · 习惯</div>
+          <h1>习惯健康</h1>
+          <div class="sub">一日一日的坚持，落成时间的纹路。</div>
+        </div>
+        <div class="date-block">
+          <div class="d" id="todayD">—</div>
+          <div class="w" id="todayW">—</div>
+        </div>
+      </div>
+
+      <!-- 新增习惯 -->
+      <div class="card frame" style="padding:18px">
+        <div class="add-form">
+          <input class="nm" id="newName" placeholder="习惯名称，如：早睡 / 喝水 / 体重">
+          <select class="tg" id="newType">
+            <option value="check">勾选</option>
+            <option value="count">计数</option>
+            <option value="value">数值</option>
+          </select>
+          <input class="un" id="newTarget" placeholder="目标" type="number">
+          <input class="un" id="newUnit" placeholder="单位">
+          <button class="btn btn-primary" onclick="addHabit()">＋ 建立</button>
+        </div>
+      </div>
+
+      <!-- 习惯列表 -->
+      <div class="habit-grid" id="habitGrid"></div>
+
+      <!-- 热力图 -->
+      <div class="sec-head">
+        <h2>三十日热力</h2>
+        <span class="en">Heatmap · 30 Days</span>
+        <span class="sp"></span>
+        <span class="smallcaps" id="heatTotal">—</span>
+      </div>
+      <div class="card frame heatmap-wrap">
+        <div class="hm" id="heatmap"></div>
+        <div class="hm-labels"><span id="hmStart">—</span><span>← 30 天前</span><span>今天 →</span></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+let habits = [];
+
+// ─── 初始化 ────────────────────────────
+async function init(){
+  const now = new Date();
+  document.getElementById('todayD').textContent = now.getDate() + ' 日';
+  document.getElementById('todayW').textContent =
+    ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
+  aeonStepper.attach(document.getElementById('newTarget'), { step: 1, min: 1, decimals: 0 });
+  await loadHabits();
+  await loadHeatmap();
+}
+function hdr(){
+  return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN };
+}
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: hdr() };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
+}
+
+// ─── 习惯 CRUD ─────────────────────────
+async function loadHabits(){
+  // 缓存优先：秒开 + 后台刷新
+  habits = await aeonData.getCached('habits_all', () => api('/api/habits'));
+  renderHabits();
+  window.addEventListener('aeon:data', e => {
+    if (e.detail.key === 'habits_all'){ habits = e.detail.data; renderHabits(); }
+  });
+}
+function renderHabits(){
+  const g = document.getElementById('habitGrid');
+  if (!habits.length){
+    g.innerHTML = `<div class="card frame" style="grid-column:1/-1;text-align:center;color:var(--ink-faint)">
+      还没有习惯。从上面建立一个吧 —— 早睡、喝水、读书，都算。</div>`;
+    return;
+  }
+  const typeTag = { check:'勾选', count:'计数', value:'数值' };
+  const typeTip = { check:'勾选：每天打一次卡', count:'计数：记录完成的次数', value:'数值：记录具体数值（如体重）' };
+  g.innerHTML = habits.map(h => `
+    <div class="card frame habit-card" data-id="${h.id}">
+      <div class="h-name">${esc(h.name)}
+        <span class="type-tag" data-tip="${typeTip[h.htype] || ''}">${typeTag[h.htype] || h.htype}</span>
+      </div>
+      <div class="h-meta">
+        <span>连续 <b>${h.streak}</b> 天</span>
+        <span>30天 <b>${h.rate30}%</b></span>
+        ${h.htype !== 'check' ? `<span>目标 <b>${h.target}${h.unit||''}</b></span>` : ''}
+      </div>
+      <div class="h-rate">
+        <span>今日</span>
+        <div class="pbar"><i style="width:${h.today_done ? 100 : 0}%"></i></div>
+        <span class="num">${h.today_value}${h.unit||''}</span>
+      </div>
+      <div class="h-actions">
+        <button class="btn check-btn ${h.today_done ? 'done' : ''}" onclick="checkIn(${h.id})">
+          ${h.today_done ? '✓ 已打卡' : (h.htype==='check' ? '打卡' : '＋ 记一次')}
+        </button>
+        <button class="btn btn-wine" onclick="delHabit(${h.id})" title="删除">✕</button>
+      </div>
+    </div>`).join('');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─── 操作 ──────────────────────────────
+async function addHabit(){
+  const name = document.getElementById('newName').value.trim();
+  if (!name) return;
+  const htype = document.getElementById('newType').value;
+  const target = parseFloat(document.getElementById('newTarget').value) || 1;
+  const unit = document.getElementById('newUnit').value.trim();
+  document.getElementById('newName').value = '';
+  // 乐观更新：立即加卡片
+  const optimisticHabit = { id: 'tmp-' + Date.now(), name, htype, target, unit, streak: 0, done: false };
+  habits.unshift(optimisticHabit);
+  renderHabits();
+  // 后台同步
+  try {
+    const created = await api('/api/habits', 'POST', { name, htype, target, unit });
+    // 用服务器返回的真实 id 替换
+    const idx = habits.findIndex(h => h.id === optimisticHabit.id);
+    if (idx !== -1) habits[idx] = { ...optimisticHabit, ...created };
+    await loadHabits();
+  } catch(e) {
+    habits = habits.filter(h => h.id !== optimisticHabit.id);
+    renderHabits();
+    await aeonAlert('创建失败：' + e.message);
+  }
+}
+async function checkIn(id){
+  const h = habits.find(x => x.id === id);
+  if (!h) return;
+  const today = new Date().toISOString().slice(0,10);
+  // 乐观更新：立即标记已打卡
+  h.done = true;
+  h.streak = (h.streak || 0) + 1;
+  renderHabits();
+  // 后台同步
+  try {
+    const value = h.htype === 'count' ? 1 : 1;
+    await api(`/api/habits/${id}/log`, 'POST', { date: today, value });
+    await loadHabits();
+  } catch(e) {
+    h.done = false;
+    h.streak = Math.max(0, (h.streak || 1) - 1);
+    renderHabits();
+    await aeonAlert('打卡失败：' + e.message);
+  }
+}
+async function delHabit(id){
+  if (!(await aeonConfirm('删除这个习惯？其打卡记录也会一并删除。'))) return;
+  // 乐观更新：立即移除
+  const removed = habits.find(h => h.id === id);
+  habits = habits.filter(h => h.id !== id);
+  renderHabits();
+  // 后台同步
+  try {
+    await api(`/api/habits/${id}`, 'DELETE');
+    await loadHabits();
+  } catch(e) {
+    if (removed) habits.unshift(removed);
+    renderHabits();
+    await aeonAlert('删除失败：' + e.message);
+  }
+}
+
+// ─── 热力图 ────────────────────────────
+async function loadHeatmap(){
+  const data = await api('/api/habits/heatmap?days=30');
+  const days = data.days || [];
+  const total = days.length ? days[days.length-1].total : 0;
+  document.getElementById('heatTotal').textContent =
+    total ? `共 ${total} 项习惯` : '—';
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = days.map(d => {
+    const lv = d.count === 0 ? '' : (d.count >= total ? 'l4' : d.count >= total*0.7 ? 'l3' : d.count >= total*0.4 ? 'l2' : 'l1');
+    return `<div class="cell ${lv}" data-t="${d.date} · ${d.count}/${d.total}"></div>`;
+  }).join('');
+  if (days.length){
+    document.getElementById('hmStart').textContent = days[0].date;
+  }
+}
+
+// ─── 主题切换 ──────────────────────────
+const themeBtn = document.createElement('button');
+themeBtn.className = 'btn';
+themeBtn.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:95';
+themeBtn.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z"/></svg>晨昏';
+themeBtn.onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur === 'dark' ? '' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('aeon_theme', nxt || 'light');
+};
+document.body.appendChild(themeBtn);
+
+// 恢复主题
+const saved = localStorage.getItem('aeon_theme');
+if (saved === 'light') document.documentElement.removeAttribute('data-theme');
+
+init().catch(e => { document.getElementById('habitGrid').innerHTML = `<div class="card frame" style="grid-column:1/-1;color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
+
+// 页面字幕
+aeonSubtitle.show('habits');
+</script>
+</body>
+</html>

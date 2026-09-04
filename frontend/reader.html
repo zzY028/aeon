@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 书架阅读 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
+<style>
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
+  .page-head .left{ flex:1; min-width:260px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(30px,4vw,44px); font-weight:700; line-height:1.15; margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif); font-style:italic; margin-top:8px; font-size:15px }
+
+  /* ===== 书架 ===== */
+  .bookshelf{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:18px; margin-top:22px }
+  .book-card{ position:relative; display:flex; flex-direction:column; gap:10px; padding-top:26px; cursor:pointer }
+  .book-card .b-cover{ height:130px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--amber-deep), var(--amber)); position:relative; overflow:hidden;
+    font-family:var(--font-serif); font-size:30px; color:var(--block-ink); font-weight:700;
+    box-shadow:2px 3px 12px var(--shadow); }
+  .book-card .b-cover::after{ content:""; position:absolute; inset:6px; border:1px dashed rgba(0,0,0,.18); border-radius:6px }
+  .book-card .b-name{ font-family:var(--font-serif); font-size:15px; font-weight:700 }
+  .book-card .b-meta{ font-size:11.5px; color:var(--ink-faint); display:flex; gap:8px }
+  .book-card .b-prog{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink-soft) }
+  .book-card .b-prog .pbar{ flex:1 }
+  .book-card .b-actions{ display:flex; gap:6px }
+  .book-card .b-actions .btn{ padding:5px 9px; font-size:11.5px }
+  .book-card .read-btn{ background:var(--amber); color:var(--block-ink); border-color:var(--amber) }
+
+  /* ===== 上传 ===== */
+  .upload-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .upload-row input[type=file]{ display:none }
+  .upload-row .file-label{ cursor:pointer; border:var(--hairline); border-radius:var(--radius-s);
+    padding:9px 16px; font-size:13.5px; background:var(--surface); color:var(--ink); display:inline-flex; gap:8px; align-items:center }
+  .upload-row .file-label:hover{ box-shadow:0 0 0 1px var(--amber), 0 0 16px var(--glow) }
+  .up-status{ font-size:12px; color:var(--amber); font-family:var(--font-mono) }
+
+  /* ===== 阅读器 ===== */
+  .reader-shell{ position:fixed; inset:0; z-index:200; display:none; flex-direction:column;
+    background:var(--bg); }
+  .reader-shell.open{ display:flex }
+  .reader-top{ display:flex; align-items:center; gap:14px; padding:14px 22px; border-bottom:var(--hairline) }
+  .reader-top .r-title{ flex:1; font-family:var(--font-serif); font-size:16px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .reader-top .r-chap{ font-family:var(--font-mono); font-size:11px; color:var(--ink-faint) }
+  .reader-top .btn{ padding:6px 12px; font-size:12px }
+  .reader-body{ flex:1; overflow-y:auto; padding:36px 0 }
+  .reader-body .inner{ max-width:680px; margin:0 auto; padding:0 26px 60px }
+  .reader-body h2{ font-family:var(--font-serif); font-size:26px; margin-bottom:26px; text-align:center;
+    color:var(--ink); text-shadow:0 0 20px var(--glow) }
+  .reader-body p{ font-size:var(--read-size,17px); line-height:1.95; color:var(--ink-soft);
+    margin-bottom:1.2em; text-align:justify }
+  .reader-bottom{ display:flex; align-items:center; gap:16px; padding:12px 22px; border-top:var(--hairline) }
+  .reader-bottom .btn{ flex:1; justify-content:center; padding:10px }
+  .reader-bottom .btn.prev{ flex:0 0 auto; min-width:90px }
+  .reader-bottom .btn.next{ flex:0 0 auto; min-width:90px }
+  .reader-bottom .r-pos{ font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); flex:0 0 auto }
+  .reader-tools{ position:fixed; right:18px; bottom:70px; display:flex; flex-direction:column; gap:8px; z-index:205 }
+  .reader-tools .btn{ padding:8px; width:40px; height:40px; justify-content:center; border-radius:50%; background:var(--surface) }
+
+  /* 目录抽屉 */
+  .toc-drawer{ position:fixed; inset:0; z-index:210; display:none; background:rgba(0,0,0,.5); backdrop-filter:blur(2px) }
+  .toc-drawer.open{ display:block }
+  .toc-panel{ position:absolute; left:0; top:0; bottom:0; width:min(320px,80vw); background:var(--bg);
+    border-right:var(--hairline); padding:20px; overflow-y:auto }
+  .toc-panel h3{ font-family:var(--font-serif); font-size:18px; margin-bottom:14px }
+  .toc-panel .toc-item{ display:block; width:100%; text-align:left; padding:9px 12px; border-radius:8px;
+    border:none; background:transparent; color:var(--ink-soft); font-size:13.5px; cursor:pointer; font-family:inherit }
+  .toc-panel .toc-item:hover{ background:var(--surface-2); color:var(--ink) }
+  .toc-panel .toc-item.on{ color:var(--amber-hi); background:var(--surface-2) }
+  .toc-panel .toc-close{ position:absolute; top:14px; right:14px }
+
+  .empty-tip{ text-align:center; color:var(--ink-faint); padding:60px 0 }
+</style>
+<script src="/static/common/aeon-modal.js"></script>
+<script src="/static/common/aeon-data.js"></script>
+</head>
+<body>
+
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>永恒 · 生活簿</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+      <a href="ledger.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+      <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+      <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+      <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+      <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a>
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z" opacity=".85"/></svg>
+        <span class="num">盈凸月 · 第 12 日</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="left">
+          <div class="smallcaps">Bookshelf · 书架</div>
+          <h1>书架阅读</h1>
+          <div class="sub">一本一本读下去，进度会记得。</div>
+        </div>
+      </div>
+
+      <div class="card frame" style="padding:18px">
+        <div class="upload-row">
+          <label class="file-label" for="bookFile">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4"/></svg>
+            上传小说（txt / epub）
+          </label>
+          <input type="file" id="bookFile" accept=".txt,.epub">
+          <span class="up-status" id="upStatus"></span>
+        </div>
+      </div>
+
+      <div class="bookshelf" id="shelf"></div>
+    </div>
+  </main>
+</div>
+
+<!-- 阅读器 -->
+<div class="reader-shell" id="reader">
+  <div class="reader-top">
+    <button class="btn" onclick="closeReader()">← 返回</button>
+    <div class="r-title" id="rTitle">—</div>
+    <button class="btn" onclick="openToc()">☰ 目录</button>
+    <span class="r-chap" id="rChap">—</span>
+  </div>
+  <div class="reader-body" id="rBody">
+    <div class="inner" id="rInner"></div>
+  </div>
+  <div class="reader-bottom">
+    <button class="btn prev" onclick="goChapter(-1)">← 上一章</button>
+    <span class="r-pos" id="rPos">—</span>
+    <button class="btn next" onclick="goChapter(1)">下一章 →</button>
+  </div>
+  <div class="reader-tools">
+    <button class="btn" onclick="fontSize(1)" title="放大">＋</button>
+    <button class="btn" onclick="fontSize(-1)" title="缩小">－</button>
+    <button class="btn" onclick="toggleReaderTheme()" title="阅读背景">◐</button>
+  </div>
+</div>
+
+<!-- 目录抽屉 -->
+<div class="toc-drawer" id="tocDrawer" onclick="if(event.target===this)closeToc()">
+  <div class="toc-panel">
+    <button class="btn toc-close" onclick="closeToc()">✕</button>
+    <h3 id="tocTitle">目录</h3>
+    <div id="tocList"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+let currentBook = null;   // { id, title, total }
+let currentChapter = 1;
+let readSize = parseInt(localStorage.getItem('aeon_read_size') || '17');
+
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+async function api(path, method='GET', body=null, isForm=false){
+  const opt = { method, headers: isForm ? { 'Authorization':'Bearer '+TOKEN } : hdr() };
+  if (body && !isForm) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─── 书架 ──────────────────────────────
+async function loadShelf(){
+  const books = await api('/api/books');
+  const el = document.getElementById('shelf');
+  if (!books.length){
+    el.innerHTML = '<div class="empty-tip">书架还空着。上传一本 txt 或 epub 开始读吧。</div>';
+    return;
+  }
+  el.innerHTML = books.map(b => `
+    <div class="card frame book-card">
+      <div class="b-cover" onclick="showBookInfo(${b.id},'${esc(b.title)}',${b.total_chapters},${b.current_chapter})">${esc(b.title[0] || '书')}</div>
+      <div class="b-name" onclick="showBookInfo(${b.id},'${esc(b.title)}',${b.total_chapters},${b.current_chapter})">${esc(b.title)}</div>
+      <div class="b-meta">
+        <span>${b.total_chapters} 章</span>
+        ${b.author ? `<span>${esc(b.author)}</span>` : ''}
+        <span>${b.source === 'serial' ? '连载' : b.source === 'upload' ? '本地上传' : '下载'}</span>
+      </div>
+      <div class="b-prog">
+        <div class="pbar"><i style="width:${b.position || 0}%"></i></div>
+        <span class="num">第 ${b.current_chapter}/${b.total_chapters} 章</span>
+      </div>
+      <div class="b-actions">
+        <button class="btn read-btn" onclick="openBook(${b.id},'${esc(b.title)}',${b.total_chapters},${b.current_chapter})">继续读</button>
+        <button class="btn" onclick="showBookInfo(${b.id},'${esc(b.title)}',${b.total_chapters},${b.current_chapter})">ℹ 详情</button>
+        <button class="btn btn-wine" onclick="delBook(${b.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ── 书籍扉页：详情 + 编辑 ── */
+async function showBookInfo(id, title, total, chapter){
+  // 查作者
+  let author = '';
+  try {
+    const books = await api('/api/books');
+    const b = books.find(x => x.id === id);
+    if (b) author = b.author || '';
+  } catch(e) {}
+  const msg = `《${title}》\n${author ? '作者：' + author : ''}\n共 ${total} 章 · 读到第 ${chapter} 章`;
+  const action = await aeonConfirm(msg + '\n\n点击「确定」编辑信息，点「取消」关闭');
+  if (!action) return;
+  // 编辑：书名 + 作者
+  const newTitle = await aeonPrompt('书名', title);
+  if (newTitle === null) return;
+  const newAuthor = await aeonPrompt('作者', author || '');
+  if (newAuthor === null) return;
+  try {
+    await api(`/api/books/${id}`, 'PUT', { title: newTitle.trim(), author: newAuthor.trim() });
+    loadShelf();
+    aeonAlert('已更新');
+  } catch(e) {
+    aeonAlert('更新失败：' + e.message);
+  }
+}
+
+document.getElementById('bookFile').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  e.target.value = '';
+  // 弹出填信息表单：书名 + 作者（预填文件名）
+  const defaultTitle = f.name.replace(/\.(txt|epub)$/i, '');
+  const title = await aeonPrompt('书名（可修改）', defaultTitle);
+  if (title === null) return;
+  if (!title.trim()){ aeonAlert('书名不能为空'); return; }
+  const author = await aeonPrompt('作者（可不填）', '');
+  if (author === null) return;
+  const st = document.getElementById('upStatus');
+  st.textContent = '上传解析中…';
+  const fd = new FormData();
+  fd.append('file', f);
+  fd.append('title', title.trim());
+  fd.append('author', author.trim());
+  try {
+    const r = await fetch(API + '/api/books/upload', { method:'POST', headers:{ 'Authorization':'Bearer '+TOKEN }, body: fd });
+    if (r.status === 401){ location.href='index.html'; return; }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || '失败');
+    st.textContent = `✅ ${d.title}（${d.total_chapters} 章）`;
+    loadShelf();
+  } catch(err) {
+    st.textContent = '❌ ' + err.message;
+  }
+});
+
+async function delBook(id){
+  if (!(await aeonConfirm('删除这本书？（章节和文件会一并删除）'))) return;
+  await api(`/api/books/${id}`, 'DELETE');
+  loadShelf();
+}
+
+// ─── 阅读器 ────────────────────────────
+function openBook(id, title, total, chapter){
+  currentBook = { id, title, total };
+  currentChapter = chapter || 1;
+  document.getElementById('reader').classList.add('open');
+  document.getElementById('rTitle').textContent = title;
+  document.documentElement.style.overflow = 'hidden';
+  const inner = document.getElementById('rInner');
+  inner.innerHTML = '<div style="text-align:center;color:var(--ink-faint)">加载中…</div>';
+  loadChapter(currentChapter);
+}
+function closeReader(){
+  document.getElementById('reader').classList.remove('open');
+  document.getElementById('tocDrawer').classList.remove('open');
+  document.documentElement.style.overflow = '';
+  loadShelf();
+}
+async function loadChapter(ch){
+  const cacheKey = 'book_ch_' + currentBook.id + '_' + ch;
+  // 缓存优先：立即显示（如果有），后台刷新
+  const cached = aeonData.readCache(cacheKey);
+  if (cached){
+    renderChapter(cached);
+  }
+  const d = await aeonData.getCached(cacheKey, () => api(`/api/books/${currentBook.id}/read?chapter=${ch}`));
+  currentChapter = ch;
+  currentBook.total = d.total;
+  renderChapter(d);
+  // 存进度（后台，不阻塞）
+  try { await api(`/api/books/${currentBook.id}/progress`, 'PUT', { chapter: ch, position: ch / d.total * 100 }); } catch(e) {}
+}
+function renderChapter(d){
+  const paras = d.content.split(/\n+/).filter(p => p.trim());
+  const inner = document.getElementById('rInner');
+  if (inner) inner.innerHTML =
+    `<h2>${esc(d.title)}</h2>` + paras.map(p => `<p>${esc(p.trim())}</p>`).join('');
+  document.getElementById('rChap').textContent = `第 ${currentChapter} / ${d.total} 章`;
+  document.getElementById('rPos').textContent = `${currentChapter} / ${d.total}`;
+  document.getElementById('rBody').scrollTop = 0;
+}
+function goChapter(delta){
+  const nxt = currentChapter + delta;
+  if (nxt < 1 || nxt > currentBook.total) return;
+  loadChapter(nxt);
+}
+function fontSize(d){
+  readSize = Math.min(26, Math.max(14, readSize + d));
+  localStorage.setItem('aeon_read_size', readSize);
+  document.documentElement.style.setProperty('--read-size', readSize + 'px');
+}
+function toggleReaderTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur === 'dark' ? '' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('aeon_theme', nxt || 'light');
+}
+
+// ─── 目录 ──────────────────────────────
+async function openToc(){
+  const d = await api(`/api/books/${currentBook.id}/chapters`);
+  document.getElementById('tocTitle').textContent = d.book.title + ' · 目录';
+  document.getElementById('tocList').innerHTML = d.chapters.map(c =>
+    `<button class="toc-item ${c.idx === currentChapter ? 'on' : ''}" onclick="jumpTo(${c.idx})">${c.idx}. ${esc(c.title)}</button>`
+  ).join('');
+  document.getElementById('tocDrawer').classList.add('open');
+}
+function closeToc(){ document.getElementById('tocDrawer').classList.remove('open'); }
+function jumpTo(idx){
+  closeToc();
+  loadChapter(idx);
+}
+
+// ─── 键盘翻页 ──────────────────────────
+document.addEventListener('keydown', e => {
+  if (!currentBook) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') goChapter(1);
+  if (e.key === 'ArrowLeft') goChapter(-1);
+  if (e.key === 'Escape') closeReader();
+});
+
+// ─── 启动 ──────────────────────────────
+document.documentElement.style.setProperty('--read-size', readSize + 'px');
+const savedTheme = localStorage.getItem('aeon_theme');
+if (savedTheme === 'light') document.documentElement.removeAttribute('data-theme');
+
+loadShelf().catch(e => { document.getElementById('shelf').innerHTML = `<div class="empty-tip" style="color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

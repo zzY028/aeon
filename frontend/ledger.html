@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 记账理财 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
+<style>
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:24px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(28px,3.6vw,40px); margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif); font-style:italic; margin-top:6px }
+  .page-head .sp{ flex:1 }
+  .head-actions{ display:flex; gap:10px }
+
+  /* 录入表单：顶部内嵌，不弹窗 */
+  .entry .grid{ display:grid; grid-template-columns:160px 180px 1fr; gap:14px; margin-top:14px }
+  .entry .chips{ margin-top:14px }
+  .entry .row3{ display:grid; grid-template-columns:1fr auto; gap:14px; margin-top:14px; align-items:end }
+  .entry .stamp{ font-family:var(--font-mono); font-size:10px; letter-spacing:.2em;
+    color:var(--ink-faint); text-transform:uppercase }
+
+  /* 预算 */
+  .budget .meta{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:12px }
+  .budget .big{ font-family:var(--font-mono); font-size:30px; letter-spacing:-.03em }
+  .budget .verdict{ margin-left:auto; font-size:13px; color:var(--wine); font-weight:600 }
+
+  /* 图表区 */
+  .charts{ display:grid; grid-template-columns:1.25fr 1fr; gap:18px }
+  .donut-flex{ display:flex; align-items:center; gap:20px; flex-wrap:wrap }
+  .donut-flex svg{ width:190px; flex:none }
+  .c-amber{fill:var(--amber-hi)} .c-wine{fill:var(--wine)} .c-deep{fill:var(--amber-deep)}
+  .c-gold{fill:var(--amber)} .c-oat{fill:#c9b18a} .c-coffee{fill:#6b4a2a}
+  .c-rust{fill:#a85c3c} .c-brown{fill:#5a4632}
+  .s-amber{stroke:var(--amber-hi)} .s-wine{stroke:var(--wine)} .s-deep{stroke:var(--amber-deep)}
+  .s-gold{stroke:var(--amber)} .s-oat{stroke:#c9b18a} .s-coffee{stroke:#6b4a2a}
+  .s-rust{stroke:#a85c3c} .s-brown{stroke:#5a4632}
+  .axis{stroke:var(--ink-faint);stroke-opacity:.4} .grid-l{stroke:var(--ink-faint);stroke-opacity:.16;stroke-dasharray:3 5}
+  .ctext{fill:var(--ink-faint)} .cval{fill:var(--amber-hi)}
+
+  /* 筛选条 */
+  .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:6px }
+  .filters select,.filters input{ width:auto; min-width:130px }
+  .filters input{ flex:1; min-width:180px }
+  .flow-empty{ padding:36px; text-align:center; color:var(--ink-faint); font-family:var(--font-serif); font-style:italic }
+
+  @media (max-width:880px){
+    .entry .grid,.entry .row3{ grid-template-columns:1fr }
+    .charts{ grid-template-columns:1fr }
+    .budget .verdict{ margin-left:0 }
+  }
+</style>
+<script src="/static/common/aeon-modal.js"></script>
+<script src="/static/common/aeon-data.js"></script>
+<script src="/static/common/aeon-stepper.js"></script>
+<script src="/static/common/aeon-calendar.js"></script>
+<script src="/static/common/aeon-subtitle.js"></script>
+</head>
+<body>
+
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+<div class="aeon-subtitle" id="aeonSubtitle"></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>EST. MCMXCIX</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>今日</a>
+      <a href="ledger.html" class="on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10.5h18"/><path d="M16 15.5h2"/><path d="M7 6V4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V6"/></svg>记账</a>
+      <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 3.5V8h-4.5"/><path d="M9 12.2l2.2 2.2 4.3-4.4"/></svg>习惯</a>
+      <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3v18"/><circle cx="6" cy="7" r="2.2"/><circle cx="6" cy="17" r="2.2"/><path d="M9.5 7H21M9.5 17H16"/></svg>日程</a>
+      <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 12V5a1.5 1.5 0 0 1 1.5-1.5h7L21.5 13l-8.5 8.5z"/><circle cx="8.5" cy="8.5" r="1.6"/></svg>待买</a>
+      <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v17.5H7.5A2.5 2.5 0 0 0 5 22z"/><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20"/><path d="M10 6.5h6"/></svg>收藏</a><a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a><a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+
+      <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5.5 21v-7M10.5 21V5M15.5 21V10M20 21v-3.5"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <button class="btn" id="themeBtn">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z"/></svg>
+        切换晨昏
+      </button>
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--amber)">
+          <circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="num">盈凸月 · WAXING</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main"><div class="wrap">
+
+    <header class="page-head">
+      <div>
+        <div class="smallcaps">THE LEDGER · AUGUST 2026 · NO.09</div>
+        <h1 class="hal">记账理财</h1>
+        <p class="sub">每一格胶片都有成本，每一块钱都有去处。</p>
+      </div>
+      <span class="sp"></span>
+      <div class="head-actions">
+        <button class="btn" onclick="exportCSV()">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5V15"/><path d="M7 8.5l5-5 5 5"/><path d="M4.5 15v4a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4"/></svg>
+          导出 CSV</button>
+        <button class="btn" onclick="exportXLS()">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5V15"/><path d="M7 8.5l5-5 5 5"/><path d="M4.5 15v4a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4"/></svg>
+          导出 Excel</button>
+      </div>
+    </header>
+
+    <!-- 录入：零阻力，顶部内嵌 -->
+    <section class="card frame entry">
+      <div class="stamp">NEW ENTRY · 记一笔</div>
+      <div class="grid">
+        <div class="field"><label>日期 DATE</label>
+          <input class="input" type="text" id="fDate" placeholder="点击选择日期" readonly></div>
+        <div class="field"><label>类型 TYPE</label>
+          <div class="seg" id="fType">
+            <button class="on" data-v="out">支出</button><button data-v="in">收入</button>
+          </div></div>
+        <div class="field"><label>金额 AMOUNT</label>
+          <input class="input amount-input" type="number" id="fAmt" placeholder="0.00" min="0" step="0.01"></div>
+      </div>
+      <div class="chips" id="fCats"></div>
+      <div class="row3">
+        <div class="field"><label>备注 NOTE</label>
+          <input class="input" type="text" id="fNote" placeholder="一句话就好，比如：深夜食堂 · 鳗鱼饭"></div>
+        <button class="btn btn-primary" style="height:44px;padding:0 26px" onclick="addEntry()">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>记一笔</button>
+      </div>
+    </section>
+
+    <!-- 预算 -->
+    <section class="card budget" style="margin-top:18px">
+      <div class="meta">
+        <span class="smallcaps">BUDGET · 8 月预算</span>
+        <span class="big num">¥3,286 <small style="font-size:14px;color:var(--ink-faint)">/ ¥4,500</small></span>
+        <span class="verdict">比匀速快 ¥1,980 · 建议收紧餐饮与购物</span>
+      </div>
+      <div class="pbar"><i style="width:0" data-w="73%" id="budgetBar"></i>
+        <span class="mark" style="left:29%" data-t="匀速 29%"></span></div>
+    </section>
+
+    <!-- 图表 -->
+    <section>
+      <div class="sec-head"><h2>收支与构成</h2><span class="en">BOX OFFICE · 6-MONTH</span><span class="sp"></span></div>
+      <div class="charts">
+        <div class="card chart-box">
+          <svg viewBox="0 0 560 220" font-family="Courier New,monospace">
+            <line class="axis" x1="30" y1="180" x2="545" y2="180"/>
+            <line class="grid-l" x1="30" y1="120" x2="545" y2="120"/>
+            <line class="grid-l" x1="30" y1="60" x2="545" y2="60"/>
+            <g id="bars"></g>
+            <rect class="c-amber" x="396" y="14" width="10" height="10"/><text class="ctext" x="411" y="23" font-size="11">收入</text>
+            <rect class="c-wine" x="452" y="14" width="10" height="10"/><text class="ctext" x="467" y="23" font-size="11">支出</text>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="donut-flex">
+            <svg viewBox="0 0 200 200">
+              <g fill="none" stroke-width="22" transform="rotate(-90 100 100)">
+                <circle class="s-gold"   cx="100" cy="100" r="70" stroke-dasharray="167.1 439.8"/>
+                <circle class="s-deep"   cx="100" cy="100" r="70" stroke-dasharray="96.8 439.8" stroke-dashoffset="-167.1"/>
+                <circle class="s-wine"   cx="100" cy="100" r="70" stroke-dasharray="61.6 439.8" stroke-dashoffset="-263.9"/>
+                <circle class="s-amber"  cx="100" cy="100" r="70" stroke-dasharray="39.6 439.8" stroke-dashoffset="-325.5"/>
+                <circle class="s-oat"    cx="100" cy="100" r="70" stroke-dasharray="35.2 439.8" stroke-dashoffset="-365.1"/>
+                <circle class="s-coffee" cx="100" cy="100" r="70" stroke-dasharray="17.6 439.8" stroke-dashoffset="-400.3"/>
+                <circle class="s-rust"   cx="100" cy="100" r="70" stroke-dasharray="13.2 439.8" stroke-dashoffset="-417.9"/>
+                <circle class="s-brown"  cx="100" cy="100" r="70" stroke-dasharray="8.8 439.8" stroke-dashoffset="-431.1"/>
+              </g>
+              <text x="100" y="97" text-anchor="middle" font-size="10" letter-spacing="2" class="ctext" font-family="Courier New,monospace">8月支出</text>
+              <text x="100" y="118" text-anchor="middle" font-size="17" class="cval" font-family="Courier New,monospace">¥3,286</text>
+            </svg>
+            <ul class="legend" style="flex:1;min-width:150px">
+              <li><i class="dot c-gold"></i>餐饮<span class="num">38%</span></li>
+              <li><i class="dot c-deep"></i>居住<span class="num">22%</span></li>
+              <li><i class="dot c-wine"></i>购物<span class="num">14%</span></li>
+              <li><i class="dot c-amber"></i>交通<span class="num">9%</span></li>
+              <li><i class="dot c-oat"></i>娱乐<span class="num">8%</span></li>
+              <li><i class="dot c-coffee"></i>医疗<span class="num">4%</span></li>
+              <li><i class="dot c-rust"></i>教育<span class="num">3%</span></li>
+              <li><i class="dot c-brown"></i>其他<span class="num">2%</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 流水 -->
+    <section>
+      <div class="sec-head"><h2>流水</h2><span class="en">DAILY RUSHES</span><span class="sp"></span>
+        <span class="smallcaps" id="flowCount"></span></div>
+      <div class="card">
+        <div class="filters">
+          <select class="input" id="qMonth">
+            <option value="">全部月份</option>
+            <option value="2026-08" selected>2026 年 8 月</option>
+            <option value="2026-07">2026 年 7 月</option>
+          </select>
+          <select class="input" id="qType">
+            <option value="">收支全部</option><option value="out">仅支出</option><option value="in">仅收入</option>
+          </select>
+          <select class="input" id="qCat">
+            <option value="">全部分类</option>
+          </select>
+          <input class="input" id="qKey" placeholder="关键词检索备注…（防抖 300ms）">
+        </div>
+        <div class="flow" id="flowList"></div>
+      </div>
+    </section>
+
+  </div></main>
+</div>
+
+<nav class="tabbar">
+  <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>今日</a>
+  <a href="ledger.html" class="on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10.5h18"/><path d="M16 15.5h2"/><path d="M7 6V4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V6"/></svg>记账</a>
+  <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 3.5V8h-4.5"/><path d="M9 12.2l2.2 2.2 4.3-4.4"/></svg>习惯</a>
+  <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3v18"/><circle cx="6" cy="7" r="2.2"/><circle cx="6" cy="17" r="2.2"/><path d="M9.5 7H21M9.5 17H16"/></svg>日程</a>
+  <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 12V5a1.5 1.5 0 0 1 1.5-1.5h7L21.5 13l-8.5 8.5z"/><circle cx="8.5" cy="8.5" r="1.6"/></svg>待买</a>
+  <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v17.5H7.5A2.5 2.5 0 0 0 5 22z"/><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20"/><path d="M10 6.5h6"/></svg>收藏</a><a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a>
+  <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5.5 21v-7M10.5 21V5M15.5 21V10M20 21v-3.5"/></svg>设置</a>
+</nav>
+
+<script>
+/* ---------- 主题 ---------- */
+const htmlEl = document.documentElement;
+document.getElementById('themeBtn').onclick = () => {
+  const next = htmlEl.dataset.theme === 'dark' ? 'light' : 'dark';
+  htmlEl.dataset.theme = next;
+  localStorage.setItem('aeon_theme', next);
+};
+
+/* ---------- API（真实数据） ---------- */
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: hdr() };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* 从 API 加载数据后替换静态 T 和 MONTHS */
+async function loadApiData(){
+  try {
+    // 缓存优先：先显示本地数据，后台刷新
+    const items = await aeonData.getCached('ledger_all', () => api('/api/ledger'));
+    T = items.map(i => ({ id: i.id, d:i.date, type:i.type==='income'?'in':'out', cat:i.category, note:i.note, amt:i.amount }));
+    const trend = await aeonData.getCached('ledger_trend', () => api('/api/ledger/trend?months=6'));
+    MONTHS = trend.map(t => [t.month.slice(5)+'月', t.income, t.expense]);
+    renderAll();
+    // 监听后台刷新
+    window.addEventListener('aeon:data', e => {
+      const d = e.detail;
+      if (d.key === 'ledger_all'){
+        T = d.data.map(i => ({ id: i.id, d:i.date, type:i.type==='income'?'in':'out', cat:i.category, note:i.note, amt:i.amount }));
+        renderAll();
+      }
+      if (d.key === 'ledger_trend'){
+        MONTHS = d.data.map(t => [t.month.slice(5)+'月', t.income, t.expense]);
+        renderAll();
+      }
+    });
+  } catch(e) { /* 未登录/失败保持演示数据 */ }
+}
+function renderAll(){
+  if (typeof renderTable === 'function') renderTable();
+  if (typeof renderChart === 'function') renderChart();
+  else if (typeof drawChart === 'function') drawChart();
+}
+/* ---------- 分类定义（图标 = assets/icons/cat-*.svg 同源） ---------- */
+const CATS = {
+  '餐饮': '<path d="M7 2.5V21"/><path d="M4.5 2.5v5a2.5 2.5 0 0 0 5 0v-5"/><path d="M17.5 2.5c-1.8 2-3 5-3 8 0 2.2.9 3.2 3 3.2V21"/>',
+  '交通': '<rect x="4" y="4" width="16" height="13.5" rx="2.5"/><path d="M4 11h16"/><path d="M8 21l1-3.5M16 21l-1-3.5"/><path d="M8 14.3h.6M15.4 14.3h.6"/>',
+  '购物': '<path d="M6 8h12l-1.2 12.4a1 1 0 0 1-1 .9H8.2a1 1 0 0 1-1-.9z"/><path d="M9 10.5V6.8a3 3 0 0 1 6 0v3.7"/>',
+  '居住': '<path d="M4 11.5L12 4l8 7.5"/><path d="M6.5 9.8V20h11V9.8"/><path d="M10 20v-5.5h4V20"/>',
+  '娱乐': '<rect x="3" y="6.5" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><path d="M7.5 3.5l3 3M13 3.5l3 3"/>',
+  '医疗': '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  '教育': '<path d="M2 9.2L12 4.5 22 9.2 12 14z"/><path d="M6.2 11.4v4.4c0 1.6 2.6 2.9 5.8 2.9s5.8-1.3 5.8-2.9v-4.4"/><path d="M22 9.2V14"/>',
+  '其他': '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'
+};
+const catIcon = c => '<svg class="ic" viewBox="0 0 24 24">' + (CATS[c] || CATS['其他']) + '</svg>';
+
+/* ---------- 演示数据（8 月支出合计 ¥3,286，与首页/预算一致） ---------- */
+let T = [
+  {d:'2026-08-09', type:'out', cat:'餐饮', note:'深夜食堂 · 鳗鱼饭', amt:68},
+  {d:'2026-08-09', type:'out', cat:'交通', note:'地铁周卡', amt:45},
+  {d:'2026-08-08', type:'in',  cat:'其他', note:'稿费到账', amt:1200},
+  {d:'2026-08-08', type:'out', cat:'购物', note:'胶片 ×3（Portra 400）', amt:267},
+  {d:'2026-08-07', type:'out', cat:'娱乐', note:'老电影资料馆门票', amt:40},
+  {d:'2026-08-06', type:'out', cat:'居住', note:'8 月房租', amt:2200},
+  {d:'2026-08-05', type:'out', cat:'餐饮', note:'周末早午餐', amt:96},
+  {d:'2026-08-04', type:'out', cat:'医疗', note:'维生素补充剂', amt:129},
+  {d:'2026-08-03', type:'out', cat:'教育', note:'《电影摄影入门》', amt:88},
+  {d:'2026-08-03', type:'out', cat:'餐饮', note:'咖啡馆手冲 ×4', amt:154},
+  {d:'2026-08-02', type:'out', cat:'购物', note:'帆布相机包', amt:199},
+  {d:'2026-08-01', type:'in',  cat:'其他', note:'工资', amt:5800},
+  {d:'2026-07-31', type:'out', cat:'娱乐', note:'黑胶唱片 · Kind of Blue', amt:320},
+  {d:'2026-07-28', type:'out', cat:'餐饮', note:'家庭聚餐', amt:412},
+  {d:'2026-07-15', type:'out', cat:'居住', note:'7 月房租', amt:2200},
+];
+
+/* ---------- 六个月分组柱状（手写 SVG，JS 计算坐标） ---------- */
+const MONTHS = [['3月',5200,4100],['4月',5400,3800],['5月',5100,4500],['6月',5600,3900],['7月',5300,4200],['8月',5800,3286]];
+document.getElementById('bars').innerHTML = MONTHS.map(([m,inc,exp],i) => {
+  const x = 44 + i*86, hi = Math.round(inc*0.0276), he = Math.round(exp*0.0276);
+  return `<rect class="c-amber" x="${x}" y="${180-hi}" width="15" height="${hi}" rx="2"/>`
+       + `<rect class="c-wine" x="${x+19}" y="${180-he}" width="15" height="${he}" rx="2"/>`
+       + `<text class="ctext" x="${x+17}" y="200" text-anchor="middle" font-size="11">${m}</text>`;
+}).join('');
+
+/* ---------- 录入表单 ---------- */
+document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+aeonCalendar.attach(document.getElementById('fDate'));
+aeonStepper.attach(document.getElementById('fAmt'), { step: 0.01, min: 0, decimals: 2 });
+let curType = 'out', curCat = '餐饮';
+const fCats = document.getElementById('fCats');
+fCats.innerHTML = Object.keys(CATS).map(c =>
+  `<button class="chip${c===curCat?' on':''}" data-c="${c}">${catIcon(c)}${c}</button>`).join('');
+fCats.onclick = e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  curCat = b.dataset.c;
+  fCats.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x===b));
+};
+document.getElementById('fType').onclick = e => {
+  const b = e.target.closest('button'); if(!b) return;
+  curType = b.dataset.v;
+  document.querySelectorAll('#fType button').forEach(x => x.classList.toggle('on', x===b));
+};
+async function addEntry(){
+  const amt = parseFloat(document.getElementById('fAmt').value);
+  if(!amt || amt <= 0){ document.getElementById('fAmt').focus(); return; }
+  const entry = {
+    d: document.getElementById('fDate').value || new Date().toISOString().slice(0,10),
+    type: curType, cat: curCat,
+    note: document.getElementById('fNote').value.trim() || curCat,
+    amt: Math.round(amt*100)/100
+  };
+  // 乐观更新：立即显示
+  T.unshift(entry);
+  document.getElementById('fAmt').value = ''; document.getElementById('fNote').value = '';
+  renderFlow();
+  // 后台同步到服务器
+  try {
+    await api('/api/ledger', 'POST', {
+      date: entry.d,
+      type: entry.type === 'in' ? 'income' : 'expense',
+      category: entry.cat,
+      note: entry.note,
+      amount: entry.amt
+    });
+    // 刷新统计 + 缓存
+    await loadApiData();
+  } catch(e) {
+    // 失败回滚
+    T.shift();
+    renderFlow();
+    await aeonAlert('保存失败：' + e.message);
+  }
+}
+
+/* ---------- 筛选 + 流水渲染（关键词防抖 300ms） ---------- */
+const qCat = document.getElementById('qCat');
+qCat.innerHTML = '<option value="">全部分类</option>' +
+  Object.keys(CATS).map(c => `<option>${c}</option>`).join('');
+let debounceTimer;
+document.getElementById('qKey').oninput = e => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(renderFlow, 300);
+};
+['qMonth','qType','qCat'].forEach(id => document.getElementById(id).onchange = renderFlow);
+
+function filtered(){
+  const m = document.getElementById('qMonth').value;
+  const t = document.getElementById('qType').value;
+  const c = document.getElementById('qCat').value;
+  const k = document.getElementById('qKey').value.trim().toLowerCase();
+  return T.filter(x =>
+    (!m || x.d.startsWith(m)) && (!t || x.type === t) && (!c || x.cat === c) &&
+    (!k || x.note.toLowerCase().includes(k)));
+}
+function renderFlow(){
+  const list = filtered();
+  document.getElementById('flowCount').textContent = '共 ' + list.length + ' 笔';
+  document.getElementById('flowList').innerHTML = list.length ? list.map(x => `
+    <div class="flow-row">
+      <span class="f-ic">${catIcon(x.cat)}</span>
+      <div class="f-body"><b>${x.note}</b><small>${x.d} · ${x.cat} · ${x.type==='in'?'收入':'支出'}</small></div>
+      <span class="f-amt ${x.type}">${x.type==='in'?'+':'−'}¥${x.amt.toLocaleString('zh-CN')}</span>
+      ${x.id ? `<button class="btn f-edit" style="flex:none;padding:4px 8px;font-size:12px;border-radius:6px" onclick="editEntry(${x.id})" data-tip="编辑这笔">✎</button>` : ''}
+    </div>`).join('')
+    : '<div class="flow-empty">这一格胶片还是空白 —— 换个筛选条件试试。</div>';
+}
+async function editEntry(id){
+  const item = T.find(x => x.id === id);
+  if (!item) return;
+  // 编辑表单：金额 + 分类 + 备注
+  const newAmt = await aeonPrompt('金额（¥）', String(item.amt));
+  if (newAmt === null) return;
+  const newNote = await aeonPrompt('备注', item.note);
+  if (newNote === null) return;
+  const amt = parseFloat(newAmt);
+  if (isNaN(amt) || amt <= 0){ aeonAlert('金额无效'); return; }
+  // 乐观更新
+  const prev = { ...item };
+  item.amt = Math.round(amt * 100) / 100;
+  item.note = newNote.trim() || item.cat;
+  renderFlow();
+  try {
+    await api(`/api/ledger/${id}`, 'PUT', {
+      amount: item.amt,
+      note: item.note,
+      category: item.cat,
+      type: item.type === 'in' ? 'income' : 'expense',
+      date: item.d
+    });
+    await loadApiData();
+  } catch(e) {
+    Object.assign(item, prev);
+    renderFlow();
+    await aeonAlert('保存失败：' + e.message);
+  }
+}
+renderFlow();
+
+/* ---------- 导出（对当前筛选结果生效） ---------- */
+function download(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportCSV(){
+  const rows = [['日期','类型','分类','备注','金额'],
+    ...filtered().map(x => [x.d, x.type==='in'?'收入':'支出', x.cat, x.note, (x.type==='in'?1:-1)*x.amt])];
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download(new Blob([csv],{type:'text/csv;charset=utf-8'}), 'aeon-ledger.csv');
+}
+function exportXLS(){
+  const rows = filtered().map(x =>
+    `<tr><td>${x.d}</td><td>${x.type==='in'?'收入':'支出'}</td><td>${x.cat}</td><td>${x.note}</td><td>${(x.type==='in'?1:-1)*x.amt}</td></tr>`).join('');
+  const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel"><meta charset="utf-8">
+    <table><tr><th>日期</th><th>类型</th><th>分类</th><th>备注</th><th>金额</th></tr>${rows}</table></html>`;
+  download(new Blob(['﻿'+html],{type:'application/vnd.ms-excel'}), 'aeon-ledger.xls');
+}
+
+/* ---------- 入场显影 ---------- */
+setTimeout(() => document.getElementById('budgetBar').style.width =
+  document.getElementById('budgetBar').dataset.w, 200);
+
+/* ---------- 加载真实数据（API） ---------- */
+loadApiData();
+
+// 页面字幕
+aeonSubtitle.show('ledger');
+</script>
+</body>
+</html>

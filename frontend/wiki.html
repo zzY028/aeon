@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 知识库 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-modal.js"></script>
+<style>
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
+  .page-head .left{ flex:1; min-width:260px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(30px,4vw,44px); font-weight:700; line-height:1.15; margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif); font-style:italic; margin-top:8px; font-size:15px }
+
+  .stats-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:22px }
+  .stat-card{ text-align:center; padding:16px }
+  .stat-card .v{ font-family:var(--font-mono); font-size:28px; color:var(--amber-hi) }
+  .stat-card .k{ font-size:11px; color:var(--ink-faint); letter-spacing:.18em; text-transform:uppercase; margin-top:4px }
+
+  .view-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px }
+  .view-tabs .btn{ border-radius:99px }
+  .view-tabs .btn.on{ background:var(--block); color:var(--block-ink); border-color:var(--block); box-shadow:0 0 12px var(--glow) }
+
+  .wiki-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px }
+  .w-item{ display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer;
+    background:var(--surface); border:var(--hairline); border-radius:10px; transition:.15s }
+  .w-item:hover{ box-shadow:0 0 0 1px var(--amber), 0 0 14px var(--glow); transform:translateY(-1px) }
+  .w-item .w-name{ font-size:13px; color:var(--ink) }
+  .w-item .w-dot{ width:6px; height:6px; border-radius:50%; background:var(--amber); flex:none }
+
+  .recent-list{ display:flex; flex-direction:column; gap:8px }
+  .r-item{ display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer;
+    background:var(--surface); border:var(--hairline); border-radius:10px; transition:.15s }
+  .r-item:hover{ box-shadow:0 0 0 1px var(--amber) }
+  .r-item .r-name{ flex:1; font-size:13px; color:var(--ink) }
+
+  /* 阅读器 */
+  .wiki-reader{ position:fixed; inset:0; z-index:300; display:none; flex-direction:column; background:var(--bg) }
+  .wiki-reader.open{ display:flex }
+  .wr-top{ display:flex; align-items:center; gap:12px; padding:14px 22px; border-bottom:var(--hairline) }
+  .wr-top .wr-title{ flex:1; font-family:var(--font-serif); font-size:17px; font-weight:700 }
+  .wr-body{ flex:1; overflow-y:auto; padding:28px 22px 60px }
+  .wr-body .inner{ max-width:720px; margin:0 auto; font-size:14.5px; line-height:1.9; color:var(--ink-soft) }
+  .wr-body h1,.wr-body h2,.wr-body h3{ font-family:var(--font-serif); color:var(--ink); margin:20px 0 10px }
+  .wr-body h1{ font-size:24px } .wr-body h2{ font-size:20px } .wr-body h3{ font-size:17px }
+  .wr-body p{ margin:10px 0 }
+  .wr-body code{ background:var(--surface-2); border-radius:4px; padding:1px 6px; font-size:12.5px }
+  .wr-body pre{ background:var(--surface-2); border-radius:8px; padding:14px; overflow-x:auto; font-size:13px }
+  .wr-body pre code{ background:none; padding:0 }
+  .wr-body ul,.wr-body ol{ padding-left:24px; margin:10px 0 }
+  .wr-body li{ margin:4px 0 }
+  .wr-body blockquote{ border-left:3px solid var(--amber); padding:8px 16px; color:var(--ink-soft);
+    background:var(--surface-2); border-radius:0 8px 8px 0; margin:12px 0 }
+  .wr-body a{ color:var(--amber-hi) }
+  .wr-body table{ border-collapse:collapse; margin:12px 0; width:100%; font-size:13px }
+  .wr-body th,.wr-body td{ border:1px solid var(--line); padding:8px 12px; text-align:left }
+  .wr-body th{ background:var(--surface-2) }
+
+  .empty-tip{ text-align:center; color:var(--ink-faint); padding:40px 0 }
+  @media (max-width:880px){ .stat-card .v{ font-size:22px } }
+</style>
+</head>
+<body>
+
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>永恒 · 生活簿</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+      <a href="ledger.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+      <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+      <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+      <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+      <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a>
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+      <a href="wiki.html" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z" opacity=".85"/></svg>
+        <span class="num">盈凸月 · 第 12 日</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="left">
+          <div class="smallcaps">Wiki · 知识库</div>
+          <h1>知识库</h1>
+          <div class="sub">读过的书、想过的概念，都沉淀在这里。</div>
+        </div>
+      </div>
+
+      <div class="stats-row" id="statsRow"></div>
+
+      <div class="view-tabs">
+        <button class="btn on" data-c="recent" onclick="showView('recent',this)">最近更新</button>
+        <button class="btn" data-c="concepts" onclick="showView('concepts',this)">概念</button>
+        <button class="btn" data-c="entities" onclick="showView('entities',this)">实体</button>
+        <button class="btn" data-c="summaries" onclick="showView('summaries',this)">摘要</button>
+        <button class="btn" data-c="graph" onclick="showView('graph',this)">图谱</button>
+      </div>
+
+      <div id="wikiContent"><div class="empty-tip">加载中…</div></div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 页面阅读器 -->
+<div class="wiki-reader" id="wikiReader">
+  <div class="wr-top">
+    <button class="btn" onclick="closeReader()">← 返回</button>
+    <div class="wr-title" id="wrTitle">—</div>
+  </div>
+  <div class="wr-body"><div class="inner" id="wrInner"></div></div>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: hdr() };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* 简易 markdown 渲染（够用就行） */
+function mdToHtml(md){
+  let html = esc(md);
+  // 代码块
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => `<pre><code>${code}</code></pre>`);
+  // 行内代码
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 标题
+  html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+  // 粗体
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  // 斜体
+  html = html.replace(/\*([^*]+)\*/g, '<i>$1</i>');
+  // 引用
+  html = html.replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>');
+  // 列表
+  html = html.replace(/^- (.*)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]*?<\/li>)\n/g, '<ul>$1</ul>\n');
+  html = html.replace(/^\d+\. (.*)$/gm, '<li>$1</li>');
+  // 链接
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  // 段落
+  html = html.replace(/\n\n+/g, '</p><p>');
+  return `<p>${html}</p>`;
+}
+
+async function init(){
+  const ov = await api('/api/wiki/overview');
+  document.getElementById('statsRow').innerHTML = `
+    <div class="card frame stat-card"><div class="v">${ov.stats.concepts||0}</div><div class="k">概念</div></div>
+    <div class="card frame stat-card"><div class="v">${ov.stats.entities||0}</div><div class="k">实体</div></div>
+    <div class="card frame stat-card"><div class="v">${ov.stats.summaries||0}</div><div class="k">摘要</div></div>
+    <div class="card frame stat-card"><div class="v">${ov.stats.comparisons||0}</div><div class="k">对比</div></div>`;
+  showView('recent');
+}
+async function showView(cat, btn){
+  if (btn){
+    document.querySelectorAll('.view-tabs .btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  const el = document.getElementById('wikiContent');
+  if (cat === 'recent'){
+    const ov = await api('/api/wiki/overview');
+    el.innerHTML = `<div class="recent-list">${ov.recent.map(r =>
+      `<div class="r-item" onclick="openPage('${esc(r.path)}','${esc(r.name)}')">
+        <span class="w-dot"></span><span class="r-name">${esc(r.name)}</span></div>`).join('') || '<div class="empty-tip">暂无</div>'}</div>`;
+  } else if (cat === 'graph'){
+    el.innerHTML = '<div class="empty-tip">图谱加载中…</div>';
+    drawGraph();
+  } else {
+    const items = await api('/api/wiki/list?cat=' + cat);
+    el.innerHTML = `<div class="wiki-grid">${items.map(x =>
+      `<div class="w-item" onclick="openPage('${esc(cat+'/'+x.name+'.md')}','${esc(x.title)}')">
+        <span class="w-dot"></span><span class="w-name">${esc(x.title)}</span></div>`).join('') || '<div class="empty-tip">暂无</div>'}</div>`;
+  }
+}
+async function openPage(path, title){
+  const d = await api('/api/wiki/page?path=' + encodeURIComponent(path));
+  document.getElementById('wrTitle').textContent = title;
+  document.getElementById('wrInner').innerHTML = mdToHtml(d.content);
+  document.getElementById('wikiReader').classList.add('open');
+  document.documentElement.style.overflow = 'hidden';
+}
+
+/* ── 知识图谱：力导向 SVG（可拖拽） ── */
+async function drawGraph(){
+  const el = document.getElementById('wikiContent');
+  try {
+    const g = await api('/api/wiki/graph');
+    const W = Math.min(el.clientWidth || 700, 900);
+    const H = 560;
+    // 节点初始化位置（圆环布局）
+    const nodes = g.nodes.map((n, i) => {
+      const ang = (i / Math.max(1, g.nodes.length)) * Math.PI * 2;
+      return { ...n, x: W/2 + Math.cos(ang) * (W*0.32), y: H/2 + Math.sin(ang) * (H*0.35),
+               vx: 0, vy: 0, r: 7 };
+    });
+    const nodeMap = {};
+    nodes.forEach(n => nodeMap[n.id] = n);
+    // 边
+    const edges = g.edges.filter(e => nodeMap[e.source] && nodeMap[e.target]);
+    // 简单力导向迭代
+    const catColor = { concepts: '#d4a053', entities: '#c4a86c', summaries: '#8b5a2b' };
+    for (let iter = 0; iter < 80; iter++){
+      // 斥力
+      for (let i = 0; i < nodes.length; i++){
+        for (let j = i+1; j < nodes.length; j++){
+          const dx = nodes[j].x - nodes[i].x, dy = nodes[j].y - nodes[i].y;
+          const d2 = Math.max(1, dx*dx + dy*dy);
+          const f = 2400 / d2;
+          const d = Math.sqrt(d2);
+          nodes[i].vx -= (dx/d) * f; nodes[i].vy -= (dy/d) * f;
+          nodes[j].vx += (dx/d) * f; nodes[j].vy += (dy/d) * f;
+        }
+      }
+      // 引力（边）
+      edges.forEach(e => {
+        const a = nodeMap[e.source], b = nodeMap[e.target];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.max(1, Math.sqrt(dx*dx + dy*dy));
+        const f = (d - 70) * 0.02;
+        a.vx += (dx/d) * f; a.vy += (dy/d) * f;
+        b.vx -= (dx/d) * f; b.vy -= (dy/d) * f;
+      });
+      // 中心引力 + 速度衰减
+      nodes.forEach(n => {
+        n.vx += (W/2 - n.x) * 0.01; n.vy += (H/2 - n.y) * 0.01;
+        n.vx *= 0.85; n.vy *= 0.85;
+        n.x += n.vx; n.y += n.vy;
+        n.x = Math.max(30, Math.min(W-30, n.x));
+        n.y = Math.max(30, Math.min(H-30, n.y));
+      });
+    }
+    // 渲染 SVG
+    const catLabel = { concepts:'概念', entities:'实体', summaries:'摘要' };
+    let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--surface);border:var(--hairline);border-radius:12px;cursor:grab">
+      <defs><filter id="gn" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter></defs>
+      <rect width="${W}" height="${H}" fill="transparent"/>`;
+    // 边
+    edges.forEach(e => {
+      const a = nodeMap[e.source], b = nodeMap[e.target];
+      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="var(--line)" stroke-width="0.8" opacity="0.5"/>`;
+    });
+    // 节点（点击打开页面）
+    nodes.forEach(n => {
+      svg += `<g class="g-node" transform="translate(${n.x},${n.y})" style="cursor:pointer"
+        onclick="openPage('${esc(n.id)}.md','${esc(n.label)}')">
+        <circle r="${n.r}" fill="${catColor[n.cat] || '#d4a053'}" filter="url(#gn)"/>
+        <text y="${n.r + 12}" text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-family="var(--font-mono)">${esc(n.label.slice(0, 12))}</text>
+      </g>`;
+    });
+    svg += `</svg>`;
+    // 图例
+    const legend = `<div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--ink-faint);flex-wrap:wrap">
+      ${['concepts','entities','summaries'].map(c => `<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${catColor[c]};margin-right:4px"></span>${catLabel[c]}</span>`).join('')}
+      <span style="margin-left:auto">点击节点查看页面</span></div>`;
+    el.innerHTML = svg + legend;
+    // 拖拽：整个图拖动（简单版）
+    let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    const svgEl = el.querySelector('svg');
+    svgEl.addEventListener('mousedown', e => { dragging = true; sx = e.clientX; sy = e.clientY; ox = 0; oy = 0; svgEl.style.cursor = 'grabbing'; });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      svgEl.style.transform = `scale(1) translate(${dx}px,${dy}px)`;
+      svgEl.style.transition = 'none';
+    });
+    window.addEventListener('mouseup', () => { dragging = false; svgEl.style.cursor = 'grab'; });
+  } catch(e) {
+    el.innerHTML = `<div class="empty-tip" style="color:var(--wine)">图谱加载失败：${esc(e.message)}</div>`;
+  }
+}
+function closeReader(){
+  document.getElementById('wikiReader').classList.remove('open');
+  document.documentElement.style.overflow = '';
+}
+
+// 主题切换
+const themeBtn = document.createElement('button');
+themeBtn.className = 'btn';
+themeBtn.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:95';
+themeBtn.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z"/></svg>晨昏';
+themeBtn.onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur === 'dark' ? '' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('aeon_theme', nxt || 'light');
+};
+document.body.appendChild(themeBtn);
+const saved = localStorage.getItem('aeon_theme');
+if (saved === 'light') document.documentElement.removeAttribute('data-theme');
+
+init().catch(e => { document.getElementById('wikiContent').innerHTML = `<div class="empty-tip" style="color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

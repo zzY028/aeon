@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>反应速度测试 · Reaction Test</title>
+<style>
+  :root {
+    --bg: #16161d; --ink: #e8e6e0; --ink-soft: #a8a6b0;
+    --amber: #c4a86c; --amber-hi: #d9bc7e; --line: #34344a;
+    --green: #7fb069; --red: #c96f5e; --blue: #7a9bc4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  .header {
+    padding: 16px 20px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 17px; color: var(--amber-hi); }
+  .header .stats { font-size: 13px; color: var(--ink-soft); display: flex; gap: 18px; }
+  .header .stats b { color: var(--amber); }
+  .stage {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none; transition: background .12s;
+    position: relative;
+  }
+  .stage .msg { text-align: center; padding: 0 30px; }
+  .stage .msg h2 { font-size: 30px; font-weight: 600; margin-bottom: 12px; }
+  .stage .msg p { font-size: 15px; color: var(--ink-soft); }
+  .stage .result {
+    position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+    text-align: center; width: 100%; padding: 0 20px;
+  }
+  .stage .result .big { font-size: 56px; font-weight: 700; color: var(--amber-hi); font-variant-numeric: tabular-nums; }
+  .stage .result .label { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+  .stage .result .rank { font-size: 14px; margin-top: 10px; color: var(--amber); }
+  /* 状态色 */
+  .stage.idle { background: var(--bg); }
+  .stage.wait { background: var(--bg); }
+  .stage.go { background: #1c3a24; }
+  .stage.too-early { background: #3a1c1c; }
+  .stage.result-mode { background: var(--bg); }
+  .footer { padding: 14px 20px; border-top: 1px solid var(--line); text-align: center; font-size: 12px; color: var(--ink-faint); }
+  .restart-btn {
+    background: none; border: 1px solid var(--amber); color: var(--amber);
+    border-radius: 8px; padding: 8px 20px; font-size: 14px; cursor: pointer; margin-top: 18px;
+    transition: all .15s;
+  }
+  .restart-btn:hover { background: var(--amber); color: #1a1a1a; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ 反应速度测试</h1>
+  <div class="stats">
+    <span>第 <b id="round">1</b>/5 轮</span>
+    <span>最好 <b id="best">—</b></span>
+    <span>平均 <b id="avg">—</b></span>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <div class="msg" id="msg">
+    <h2 id="title">点击开始</h2>
+    <p id="hint">屏幕变绿后立刻点击，测你的反应速度</p>
+  </div>
+  <div class="result" id="result" style="display:none">
+    <div class="big" id="bigNum">0</div>
+    <div class="label" id="resultLabel">毫秒</div>
+    <div class="rank" id="rank"></div>
+    <button class="restart-btn" id="restartBtn">再来一次</button>
+  </div>
+</div>
+
+<div class="footer">变绿后点击 · 5 轮取平均 · 人类平均约 250ms · 职业选手 150-180ms</div>
+
+<script>
+const stage = document.getElementById('stage');
+const msg = document.getElementById('msg');
+const title = document.getElementById('title');
+const hint = document.getElementById('hint');
+const result = document.getElementById('result');
+const bigNum = document.getElementById('bigNum');
+const resultLabel = document.getElementById('resultLabel');
+const rankEl = document.getElementById('rank');
+const roundEl = document.getElementById('round');
+const bestEl = document.getElementById('best');
+const avgEl = document.getElementById('avg');
+const restartBtn = document.getElementById('restartBtn');
+
+let state = 'idle';       // idle | waiting | ready | tooEarly | done
+let timer = null;
+let startTime = 0;
+let rounds = [];
+const MAX_ROUNDS = 5;
+
+function setState(s) {
+  state = s;
+  stage.className = 'stage ' + s;
+}
+
+function resetRoundUI() {
+  result.style.display = 'none';
+  msg.style.display = 'block';
+}
+
+function handleClick() {
+  if (state === 'idle') {
+    startWaiting();
+  } else if (state === 'waiting') {
+    // 变绿前就点了 → 太早
+    clearTimeout(timer);
+    setState('too-early');
+    title.textContent = '太早了！';
+    hint.textContent = '等它变绿再点，重新开始这一轮';
+    rounds = [];
+    updateHeader();
+    setTimeout(() => { msg.style.display = 'block'; startWaiting(); }, 800);
+  } else if (state === 'ready') {
+    // 变绿后点击 → 记录成绩
+    const t = performance.now() - startTime;
+    rounds.push(t);
+    showResult(t);
+  } else if (state === 'too-early') {
+    // 忽略，等自动重启
+  }
+}
+
+function startWaiting() {
+  resetRoundUI();
+  setState('waiting');
+  title.textContent = '等待中…';
+  hint.textContent = '屏幕变绿后立刻点击';
+  // 随机延迟 1.5~4 秒
+  const delay = 1500 + Math.random() * 2500;
+  timer = setTimeout(() => {
+    setState('go');
+    title.textContent = '点击！';
+    hint.textContent = '现在！';
+    startTime = performance.now();
+  }, delay);
+}
+
+function showResult(t) {
+  const ms = Math.round(t);
+  setState('result-mode');
+  msg.style.display = 'none';
+  result.style.display = 'block';
+  bigNum.textContent = ms;
+  resultLabel.textContent = '毫秒';
+  rankEl.textContent = rank(ms);
+
+  if (rounds.length >= MAX_ROUNDS) {
+    // 全部完成
+    const avg = Math.round(rounds.reduce((a,b)=>a+b,0) / rounds.length);
+    title.textContent = '完成！';
+    hint.textContent = '';
+    avgEl.textContent = avg + 'ms';
+    restartBtn.style.display = 'inline-block';
+  } else {
+    // 下一轮
+    restartBtn.style.display = 'none';
+    roundEl.textContent = rounds.length + 1;
+    setTimeout(() => startWaiting(), 1200);
+  }
+  updateHeader();
+}
+
+function rank(ms) {
+  if (ms < 150) return '🏆 机器人级别！';
+  if (ms < 180) return '⚡ 职业选手级';
+  if (ms < 220) return '🔥 非常快';
+  if (ms < 280) return '👍 优于平均';
+  if (ms < 350) return '😐 正常水平';
+  return '🐢 有点慢，多练练';
+}
+
+function updateHeader() {
+  if (rounds.length) {
+    bestEl.textContent = Math.min(...rounds) + 'ms';
+    avgEl.textContent = Math.round(rounds.reduce((a,b)=>a+b,0)/rounds.length) + 'ms';
+  }
+}
+
+restartBtn.addEventListener('click', () => {
+  rounds = [];
+  roundEl.textContent = 1;
+  bestEl.textContent = '—';
+  avgEl.textContent = '—';
+  result.style.display = 'none';
+  msg.style.display = 'block';
+  startWaiting();
+});
+
+stage.addEventListener('click', handleClick);
+</script>
+</body>
+</html>

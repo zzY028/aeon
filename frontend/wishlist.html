@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeon · 待买 — 1999 电影级旧味</title>
+<link rel="icon" href="/static/assets/decor/logo.svg">
+<link rel="stylesheet" href="/static/styles/theme.css">
+<style>
+  /* ===== 待买页 ===== */
+  .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
+  .page-head .left{ flex:1; min-width:260px }
+  .page-head h1{ font-family:var(--font-serif); font-size:clamp(30px,4vw,44px); font-weight:700; line-height:1.15; margin-top:8px }
+  .page-head .sub{ color:var(--ink-soft); font-family:var(--font-serif); font-style:italic; margin-top:8px; font-size:15px }
+  .date-block{ text-align:right; font-family:var(--font-mono) }
+  .date-block .d{ font-size:26px; color:var(--amber-hi); letter-spacing:-.02em }
+  .date-block .w{ font-size:11px; color:var(--ink-faint); letter-spacing:.2em; margin-top:2px }
+
+  .add-form{ display:flex; gap:10px; flex-wrap:wrap }
+  .add-form input,.add-form select{
+    background:var(--surface); border:var(--hairline); border-radius:var(--radius-s);
+    color:var(--ink); padding:9px 12px; font-size:13.5px; font-family:inherit; outline:none;
+  }
+  .add-form .nm{ flex:1; min-width:180px }
+  .add-form .lv{ width:110px }
+
+  .wish-list{ margin-top:22px; display:flex; flex-direction:column; gap:12px }
+  .wish-item{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:var(--surface); border:var(--hairline); border-radius:10px; padding:14px 18px;
+    transition:.18s;
+  }
+  .wish-item.bought{ opacity:.5 }
+  .wish-item.bought .w-name{ text-decoration:line-through }
+  .w-level{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase;
+    border-radius:5px; padding:3px 9px; flex:none }
+  .lv-want{ color:var(--amber); border:1px solid var(--amber) }
+  .lv-need{ color:var(--wine); border:1px solid var(--wine); background:rgba(177,70,58,.06) }
+  .lv-wait{ color:var(--ink-faint); border:1px solid var(--line) }
+  .w-name{ flex:1; font-size:14.5px }
+  .w-note{ color:var(--ink-faint); font-size:12px }
+  .w-cool{ font-family:var(--font-mono); font-size:10px; color:var(--wine); border:1px dashed var(--wine);
+    border-radius:99px; padding:3px 10px; animation:pulse 2s infinite }
+  @keyframes pulse{ 50%{ opacity:.5 } }
+  .w-actions{ display:flex; gap:6px }
+  .w-actions .btn{ padding:6px 10px; font-size:12px }
+  .w-buy{ background:var(--amber); color:var(--block-ink); border-color:var(--amber) }
+  .empty-tip{ text-align:center; color:var(--ink-faint); padding:40px 0 }
+
+  @media (max-width:880px){
+    .date-block{ text-align:left }
+  }
+</style>
+<script src="/static/common/aeon-modal.js"></script>
+<script src="/static/common/aeon-data.js"></script>
+<script src="/static/common/aeon-subtitle.js"></script>
+</head>
+<body>
+
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+<div class="aeon-subtitle" id="aeonSubtitle"></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand" onclick="location.href='index.html'" style="cursor:pointer">
+      <img src="/static/assets/decor/logo.svg" alt="Aeon">
+      <div><b>Aeon</b><span>永恒 · 生活簿</span></div>
+    </div>
+    <nav class="nav">
+      <a href="index.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>今日</a>
+      <a href="ledger.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 3v4M16 3v4M8 13h3"/></svg>记账</a>
+      <a href="habits.html"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/><circle cx="12" cy="12" r="9"/></svg>习惯</a>
+      <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
+      <a href="wishlist.html" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
+      <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
+      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a><a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
+
+      <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
+    </nav>
+    <div class="side-foot">
+      <div class="moonbox">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M14 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z" opacity=".85"/></svg>
+        <span class="num">盈凸月 · 第 12 日</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="left">
+          <div class="smallcaps">Wishlist · 待买</div>
+          <h1>待买清单</h1>
+          <div class="sub">想要、需要、观望——想清楚再买。</div>
+        </div>
+        <div class="date-block">
+          <div class="d" id="todayD">—</div>
+          <div class="w" id="todayW">—</div>
+        </div>
+      </div>
+
+      <div class="card frame" style="padding:18px">
+        <div class="add-form">
+          <input class="nm" id="newName" placeholder="想买什么？">
+          <select class="lv" id="newLevel">
+            <option value="want">想要</option>
+            <option value="need">需要</option>
+            <option value="wait">观望</option>
+          </select>
+          <button class="btn btn-primary" onclick="addWish()">＋ 添加</button>
+        </div>
+      </div>
+
+      <div class="wish-list" id="wishList"></div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('aeon_token') || '';
+
+async function init(){
+  const now = new Date();
+  document.getElementById('todayD').textContent = now.getDate() + ' 日';
+  document.getElementById('todayW').textContent =
+    ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
+  await load();
+}
+function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+async function api(path, method='GET', body=null){
+  const opt = { method, headers: hdr() };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(API + path, opt);
+  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
+  return r.json();
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function load(){
+  const items = await aeonData.getCached('wishes_all', () => api('/api/wishes'));
+  renderWishes(items);
+  window.addEventListener('aeon:data', e => {
+    if (e.detail.key === 'wishes_all') renderWishes(e.detail.data);
+  });
+}
+function renderWishes(items){
+  const el = document.getElementById('wishList');
+  if (!items.length){
+    el.innerHTML = '<div class="empty-tip">清单还是空的。想买的、需要的，先记下来。</div>';
+    return;
+  }
+  const lvName = { want:'想要', need:'需要', wait:'观望' };
+  const lvTip = { want:'想要：心动，先记下来', need:'需要：必需品，优先考虑', wait:'观望：再等等，冷静期后决定' };
+  el.innerHTML = items.map(w => `
+    <div class="wish-item ${w.bought ? 'bought' : ''}">
+      <span class="w-level lv-${w.level}" data-tip="${lvTip[w.level] || ''}">${lvName[w.level] || w.level}</span>
+      <span class="w-name">${esc(w.name)}</span>
+      ${w.note ? `<span class="w-note">${esc(w.note)}</span>` : ''}
+      ${w.cooling_done ? `<span class="w-cool" data-tip="冷静期已满，可以决定买不买了">冷静期满 ${w.hold_days} 天</span>` : ''}
+      <span class="w-actions">
+        ${w.bought
+          ? `<span class="e-tag" style="font-family:var(--font-mono);font-size:10px;color:var(--ink-faint)">已买 ${esc(w.bought_at||'')}</span>`
+          : `<button class="btn w-buy" data-tip="标记已买（可记一笔支出）" onclick="buy(${w.id})">已买</button>
+             <button class="btn" data-tip="删除此条目" onclick="del(${w.id})">✕</button>`}
+      </span>
+    </div>`).join('');
+}
+
+async function addWish(){
+  const name = document.getElementById('newName').value.trim();
+  if (!name) return;
+  const level = document.getElementById('newLevel').value;
+  document.getElementById('newName').value = '';
+  // 乐观更新：立即加条目
+  const opt = { id: 'tmp-' + Date.now(), name, level, bought: false, cooling_done: false, hold_days: 0 };
+  const all = await aeonData.readCache('wishes_all') || [];
+  aeonData.writeCache('wishes_all', [...all, opt]);
+  renderWishes([...all, opt]);
+  // 后台同步
+  try {
+    await api('/api/wishes', 'POST', { name, level });
+    await load();
+  } catch(e) {
+    await aeonAlert('添加失败：' + e.message);
+    await load();
+  }
+}
+async function buy(id){
+  const amount = await aeonPrompt('记一笔支出？输入金额（不填则只标记已买）：', '');
+  // 乐观更新：立即标记已买
+  const all = await aeonData.readCache('wishes_all') || [];
+  const item = all.find(w => w.id === id);
+  if (item){ item.bought = true; aeonData.writeCache('wishes_all', all); renderWishes(all); }
+  // 后台同步
+  try {
+    if (amount !== null && amount.trim() !== ''){
+      const v = parseFloat(amount);
+      if (!isNaN(v)) await api(`/api/wishes/${id}/buy?amount=${v}`, 'POST');
+      else await api(`/api/wishes/${id}/buy`, 'POST');
+    } else if (amount !== null){
+      await api(`/api/wishes/${id}/buy`, 'POST');
+    }
+    await load();
+  } catch(e) {
+    if (item){ item.bought = false; aeonData.writeCache('wishes_all', all); renderWishes(all); }
+    await aeonAlert('操作失败：' + e.message);
+    await load();
+  }
+}
+async function del(id){
+  if (!(await aeonConfirm('删除这个条目？'))) return;
+  // 乐观更新：立即移除
+  const all = await aeonData.readCache('wishes_all') || [];
+  const filtered = all.filter(w => w.id !== id);
+  aeonData.writeCache('wishes_all', filtered);
+  renderWishes(filtered);
+  // 后台同步
+  try {
+    await api(`/api/wishes/${id}`, 'DELETE');
+    await load();
+  } catch(e) {
+    await aeonAlert('删除失败：' + e.message);
+    await load();
+  }
+}
+
+// 主题切换
+const themeBtn = document.createElement('button');
+themeBtn.className = 'btn';
+themeBtn.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:95';
+themeBtn.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z"/></svg>晨昏';
+themeBtn.onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur === 'dark' ? '' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('aeon_theme', nxt || 'light');
+};
+document.body.appendChild(themeBtn);
+const saved = localStorage.getItem('aeon_theme');
+if (saved === 'light') document.documentElement.removeAttribute('data-theme');
+
+init().catch(e => { document.getElementById('wishList').innerHTML = `<div class="empty-tip" style="color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
+
+// 页面字幕
+aeonSubtitle.show('wishlist');
+</script>
+</body>
+</html>

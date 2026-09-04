@@ -1,284 +1,82 @@
+"""Aeon — 个人管家后端（v3 架构版）
+FastAPI + SQLite + JWT + 多用户预留
 """
-Aeon — 个人管家后端
-FastAPI + SQLite + APScheduler + JWT + WebSocket
-"""
-
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Header
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, String, Integer, Boolean, DateTime, Enum as SAEnum
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-import jwt
-import json
+from sqlalchemy.orm import Session
+
 import os
-import enum
 
-# ─── Config ─────────────────────────────
-SECRET_KEY = os.getenv("AEON_SECRET", "aeon-dev-secret-change-me")
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "aeon.db")
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-ADMIN_USERNAME = "Y"
-VALID_INVITE_CODES = {"AEON-2026", "ZERO-DEGREE", "PHILOSOPHY-144"}
+from db import engine, get_db
+from models import Base
+from services.auth import login_or_register, get_current_user
+from models import User
+from routes import ledger, habits, schedule, wishes, media, books, balance, briefing, import_data, files, wiki, life
 
-# ─── Database ───────────────────────────
-engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
-Base = declarative_base()
-SessionLocal = sessionmaker(bind=engine)
-
-class Platform(str, enum.Enum):
-    weixin = "weixin"
-    feishu = "feishu"
-    both = "both"
-
-class Todo(Base):
-    __tablename__ = "todos"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String, nullable=False)
-    due_at = Column(DateTime, nullable=False)
-    platform = Column(String, default="both")
-    done = Column(Boolean, default=False)
-    created_by = Column(String, default="Y")
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class Schedule(Base):
-    __tablename__ = "schedules"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String, nullable=False)
-    cron_expr = Column(String, nullable=False)
-    platform = Column(String, default="both")
-    active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+# 前端目录：backend/../frontend（动态解析，避免硬编码服务器路径）
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
 
 Base.metadata.create_all(bind=engine)
 
-import httpx
-
-# ─── App ───────────────────────────────
-app = FastAPI(title="Aeon", version="1.0")
+app = FastAPI(title="Aeon", version="3.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# ─── Schemas ───────────────────────────
-class TodoCreate(BaseModel):
-    title: str
-    due_at: str  # ISO format
-    platform: str = "both"
+# ─── Routers ─────────────────────────────
+app.include_router(ledger.router)
+app.include_router(habits.router)
+app.include_router(schedule.router)
+app.include_router(wishes.router)
+app.include_router(media.router)
+app.include_router(books.router)
+app.include_router(balance.router)
+app.include_router(briefing.router)
+app.include_router(import_data.router)
+app.include_router(files.router)
+app.include_router(wiki.router)
+app.include_router(life.router)
 
-class ScheduleCreate(BaseModel):
-    title: str
-    cron_expr: str
-    platform: str = "both"
 
+# ─── Schemas ─────────────────────────────
 class LoginRequest(BaseModel):
     username: str
     password: str
-    invite_code: str = None  # 非管理员注册必填
+    invite_code: str | None = None
 
-# ─── Auth ──────────────────────────────
-def create_token(username: str, is_admin: bool = False) -> str:
-    exp = datetime.utcnow() + timedelta(days=30 if is_admin else 1)
-    return jwt.encode({"sub": username, "admin": is_admin, "exp": exp}, SECRET_KEY, algorithm="HS256")
 
-def get_user(authorization: str = Header(None)) -> dict:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "未登录")
-    try:
-        payload = jwt.decode(authorization[7:], SECRET_KEY, algorithms=["HS256"])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(401, "登录已过期")
-    except jwt.InvalidTokenError:
-        raise HTTPException(401, "无效凭证")
-
-def require_admin(user: dict = Depends(get_user)):
-    if not user.get("admin"):
-        raise HTTPException(403, "需要管理员权限")
-    return user
-
-# ─── DB helper ──────────────────────────
-def get_db():
-    db = SessionLocal()
-    try: yield db
-    finally: db.close()
-
-# ─── Auth Routes ────────────────────────
+# ─── Auth ────────────────────────────────
 @app.post("/api/login")
-def login(body: LoginRequest):
-    if body.username == ADMIN_USERNAME:
-        return {"token": create_token(body.username, is_admin=True), "admin": True, "username": body.username}
-    if not body.invite_code or body.invite_code not in VALID_INVITE_CODES:
-        raise HTTPException(403, "邀请码无效")
-    if not body.password:
-        raise HTTPException(400, "需要设置密码")
-    return {"token": create_token(body.username, is_admin=False), "admin": False, "username": body.username}
+def login(req: LoginRequest):
+    token, is_new = login_or_register(req.username, req.password, req.invite_code)
+    return {"token": token, "is_new": is_new, "username": req.username}
+
 
 @app.get("/api/me")
-def me(user: dict = Depends(get_user)):
-    return {"username": user["sub"], "admin": user.get("admin", False)}
+def me(user: User = Depends(get_current_user)):
+    return {"username": user.username, "is_admin": bool(user.is_admin)}
 
-# ─── Todo Routes ────────────────────────
-@app.get("/api/todos")
-def list_todos(db: Session = Depends(get_db), user: dict = Depends(get_user)):
-    q = db.query(Todo).filter(Todo.done == False)
-    if not user.get("admin"):
-        q = q.filter(Todo.created_by == user["sub"])
-    return [{"id": t.id, "title": t.title, "due_at": t.due_at.isoformat(), "platform": t.platform, "done": t.done} for t in q.order_by(Todo.due_at).all()]
-
-@app.post("/api/todos")
-def create_todo(body: TodoCreate, db: Session = Depends(get_db), user: dict = Depends(get_user)):
-    todo = Todo(title=body.title, due_at=datetime.fromisoformat(body.due_at), platform=body.platform, created_by=user["sub"])
-    db.add(todo)
-    db.commit()
-    db.refresh(todo)
-    return {"id": todo.id, "title": todo.title}
-
-@app.put("/api/todos/{todo_id}/done")
-def done_todo(todo_id: int, db: Session = Depends(get_db), user: dict = Depends(get_user)):
-    todo = db.query(Todo).filter(Todo.id == todo_id).first()
-    if not todo:
-        raise HTTPException(404, "待办不存在")
-    todo.done = True
-    db.commit()
-    return {"ok": True}
-
-@app.delete("/api/todos/{todo_id}")
-def delete_todo(todo_id: int, db: Session = Depends(get_db), user: dict = Depends(get_user)):
-    todo = db.query(Todo).filter(Todo.id == todo_id).first()
-    if not todo:
-        raise HTTPException(404, "待办不存在")
-    db.delete(todo)
-    db.commit()
-    return {"ok": True}
-
-# ─── Schedule Routes ────────────────────
-@app.get("/api/schedules")
-def list_schedules(db: Session = Depends(get_db)):
-    return [{"id": s.id, "title": s.title, "cron_expr": s.cron_expr, "platform": s.platform, "active": s.active} for s in db.query(Schedule).all()]
-
-@app.post("/api/schedules")
-def create_schedule(body: ScheduleCreate, db: Session = Depends(get_db)):
-    sch = Schedule(title=body.title, cron_expr=body.cron_expr, platform=body.platform)
-    db.add(sch)
-    db.commit()
-    db.refresh(sch)
-    return {"id": sch.id, "title": sch.title}
-
-@app.put("/api/schedules/{sch_id}/toggle")
-def toggle_schedule(sch_id: int, db: Session = Depends(get_db)):
-    sch = db.query(Schedule).filter(Schedule.id == sch_id).first()
-    if not sch:
-        raise HTTPException(404)
-    sch.active = not sch.active
-    db.commit()
-    return {"active": sch.active}
-
-# ─── File Browser ────────────────────────
-@app.get("/api/files")
-def list_files(path: str = "/root", user: dict = Depends(require_admin)):
-    import os
-    target = os.path.abspath(path)
-    if not target.startswith("/root"):
-        raise HTTPException(403, "仅限于 /root 目录")
-    if not os.path.exists(target):
-        raise HTTPException(404, "目录不存在")
-    items = []
-    for name in sorted(os.listdir(target)):
-        full = os.path.join(target, name)
-        is_dir = os.path.isdir(full)
-        size = 0 if is_dir else os.path.getsize(full)
-        items.append({"name": name, "is_dir": is_dir, "size": size, "path": full})
-    return {"path": target, "items": items}
-
-@app.get("/api/files/content")
-def read_file(path: str, user: dict = Depends(require_admin)):
-    import os
-    target = os.path.abspath(path)
-    if not target.startswith("/root"):
-        raise HTTPException(403, "仅限于 /root 目录")
-    if not os.path.exists(target) or os.path.isdir(target):
-        raise HTTPException(404)
-    if os.path.getsize(target) > 1024 * 100:
-        raise HTTPException(400, "文件过大")
-    with open(target) as f:
-        return {"path": target, "content": f.read()}
 
 # ─── Health ─────────────────────────────
-@app.get("/api/health")
+@app.get("/health")
 def health():
-    return {"status": "ok", "time": datetime.utcnow().isoformat()}
+    return {"status": "ok", "service": "Aeon", "version": "3.0"}
 
-# ─── Tutor ──────────────────────────────
-DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 
-class TutorQuestion(BaseModel):
-    message: str
-    history: list[dict] = []
+# ─── Static（前端）────────────────────────
+@app.get("/")
+def index():
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
-TUTOR_PROMPT = """你是高等数学家教。教学风格：先确认学生卡在哪里不要直接给答案，用苏格拉底式提问引导思考。讲到关键定理说明为什么重要。每道题讲完问"要不要做类似的题巩固"。遇ε-N语言或极限证明分步骤展示。用中文，语言简洁不堆砌术语。参考教材：同济八版高等数学。"""
+# 页面直接可访问：/habits.html → frontend/habits.html
+@app.get("/{page}")
+def page(page: str):
+    if page.endswith(".html"):
+        path = os.path.join(FRONTEND_DIR, os.path.basename(page))
+        if os.path.exists(path):
+            return FileResponse(path)
+    raise HTTPException(status_code=404, detail="页面不存在")
 
-@app.post("/api/tutor")
-async def tutor(q: TutorQuestion):
-    if not DEEPSEEK_KEY:
-        raise HTTPException(500, "API Key 未配置")
-    messages = [{"role": "system", "content": TUTOR_PROMPT}]
-    for h in (q.history or [])[-10:]:
-        messages.append(h)
-    messages.append({"role": "user", "content": q.message})
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(DEEPSEEK_URL, json={
-            "model": "deepseek-v4-pro", "messages": messages,
-            "temperature": 0.3, "max_tokens": 2048
-        }, headers={"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"})
-        data = resp.json()
-    if "choices" not in data:
-        raise HTTPException(500, f"API 错误")
-    return {"answer": data["choices"][0]["message"]["content"]}
-
-# ─── Push Engine (scheduler callback) ───
-def check_and_push():
-    db = SessionLocal()
-    try:
-        now = datetime.utcnow()
-        todos = db.query(Todo).filter(Todo.done == False, Todo.due_at <= now).all()
-        for t in todos:
-            # In production: call Hermes cron API
-            print(f"[Aeon Push] {t.title} → {t.platform}")
-            t.done = True
-        db.commit()
-    finally:
-        db.close()
-
-# ─── WebSocket ──────────────────────────
-scheduler = BackgroundScheduler()
-scheduler.add_job(check_and_push, 'interval', seconds=30, id='push_engine')
-scheduler.start()
-
-from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-
-# ─── WebSocket ──────────────────────────
-@app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
-    await ws.accept()
-    try:
-        while True:
-            data = await ws.receive_text()
-            await ws.send_text(json.dumps({"echo": data, "time": datetime.utcnow().isoformat()}))
-    except WebSocketDisconnect:
-        pass
-
-# ─── Static Files (must be last, assets before frontend) ──
-assets_path = Path(__file__).parent.parent / "assets"
-if assets_path.exists():
-    app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
-frontend_path = Path(__file__).parent.parent / "frontend"
-if frontend_path.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
-
-# ─── Startup ────────────────────────────
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# 前端资源静态服务（styles / assets / images）
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
