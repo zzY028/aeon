@@ -5,13 +5,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from db import get_db
 from models import User, Ledger, Habit, HabitLog, ScheduleEvent, Wish, Book
+from routes.model import resolve
 from services.auth import get_current_user
 import os, json, urllib.request
 
 router = APIRouter(prefix="/api/life", tags=["life"])
-
-DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
 CATS = {"food":"餐饮","trans":"交通","shop":"购物","fun":"娱乐","edu":"学习","health":"健康","other":"其他"}
 
@@ -95,9 +93,10 @@ def get_lifebook(db: Session = Depends(get_db), user: User = Depends(get_current
 
 @router.post("/subtitles")
 async def generate_subtitles(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """生活簿更新后，调 DeepSeek 生成每页字幕（一次生成一批）"""
+    """生活簿更新后，调模型生成每页字幕（一次生成一批；模型跟随设置页切换）"""
     book = build_lifebook(db, user)
-    if not DEEPSEEK_KEY:
+    mr = resolve()
+    if not mr or not mr["api_key"]:
         # 没 key 时返回规则模板（不调 AI）
         return {"subtitles": fallback_subtitles(book), "mode": "fallback"}
 
@@ -130,14 +129,14 @@ async def generate_subtitles(db: Session = Depends(get_db), user: User = Depends
 [早报]xxx"""
 
     try:
-        req = urllib.request.Request(DEEPSEEK_URL,
+        req = urllib.request.Request(mr["base_url"].rstrip("/") + "/chat/completions",
             data=json.dumps({
-                "model": "deepseek-chat",
+                "model": mr["model"],
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.9,
                 "max_tokens": 300,
             }).encode(),
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {DEEPSEEK_KEY}"})
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {mr['api_key']}"})
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
         raw = data["choices"][0]["message"]["content"]

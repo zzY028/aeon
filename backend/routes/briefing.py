@@ -5,9 +5,9 @@ import re
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException
 
-router = APIRouter(prefix="/api/briefing", tags=["briefing"])
+from config import BRIEFING_DIR
 
-BRIEFING_DIR = "/root/Daily"
+router = APIRouter(prefix="/api/briefing", tags=["briefing"])
 
 
 def latest_briefing_path() -> str | None:

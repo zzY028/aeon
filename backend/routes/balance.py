@@ -11,12 +11,19 @@ router = APIRouter(prefix="/api/balance", tags=["balance"])
 DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 
 # provider 化配置（后续加模型只加这里）
+# dashscope：免费/后付费额度在阿里云百炼控制台看，这里不查余额（OpenAI 兼容端点无余额 API）
 PROVIDERS = {
     "deepseek": {
         "name": "DeepSeek",
         "balance_api": "https://api.deepseek.com/user/balance",
         "auth": "Bearer",
         "key": DEEPSEEK_KEY,
+    },
+    "dashscope": {
+        "name": "阿里百炼 DashScope",
+        "balance_api": None,  # 无公开余额 API，控制台查看
+        "auth": "Bearer",
+        "key": os.getenv("DASHSCOPE_API_KEY", ""),
     },
     # 预留（暂不实现）：
     # "minimax": {...},
@@ -36,6 +43,17 @@ def query_balance(req: BalanceRequest):
         raise HTTPException(status_code=404, detail=f"不支持的 provider: {req.provider}")
     if not provider["key"]:
         raise HTTPException(status_code=503, detail=f"{provider['name']} 未配置 API Key")
+
+    # 无余额 API 的 provider（如 dashscope 免费额度）：直接给提示
+    if not provider.get("balance_api"):
+        return {
+            "provider": req.provider,
+            "name": provider["name"],
+            "balance": None,
+            "currency": "",
+            "is_available": True,
+            "note": "免费/后付费额度请在服务商控制台查看",
+        }
 
     try:
         request = urllib.request.Request(

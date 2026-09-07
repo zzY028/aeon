@@ -14,7 +14,7 @@ from db import engine, get_db
 from models import Base
 from services.auth import login_or_register, get_current_user
 from models import User
-from routes import ledger, habits, schedule, wishes, media, books, balance, briefing, import_data, files, wiki, life
+from routes import ledger, habits, schedule, wishes, media, books, balance, briefing, import_data, files, wiki, life, tus_upload, model, wb_deliver
 
 # 前端目录：backend/../frontend（动态解析，避免硬编码服务器路径）
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
@@ -22,7 +22,10 @@ FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "f
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Aeon", version="3.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
+                   expose_headers=["Location", "Upload-Offset", "Tus-Resumable", "Tus-Version",
+                                   "Tus-Extension", "Tus-Max-Size", "Upload-Length", "Upload-Expires",
+                                   "Upload-Concat", "Content-Length", "ETag"])
 
 # ─── Routers ─────────────────────────────
 app.include_router(ledger.router)
@@ -32,9 +35,13 @@ app.include_router(wishes.router)
 app.include_router(media.router)
 app.include_router(books.router)
 app.include_router(balance.router)
+app.include_router(model.router)
 app.include_router(briefing.router)
 app.include_router(import_data.router)
 app.include_router(files.router)
+app.include_router(tus_upload.tus_router)
+app.include_router(tus_upload.merge_router)
+app.include_router(wb_deliver.router)
 app.include_router(wiki.router)
 app.include_router(life.router)
 

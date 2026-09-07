@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Aeon · 登录</title>
+<link rel="stylesheet" href="/static/styles/theme.css">
+<style>
+  body{
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; min-height:100dvh;
+    padding:24px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, var(--bg-2), var(--bg) 60%);
+    position:relative; overflow:hidden;
+  }
+  /* 胶片颗粒 + 暗角，呼应全站风格 */
+  body::before{
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:var(--grain-url, none);
+    opacity:var(--grain-op); mix-blend-mode:overlay;
+  }
+  body::after{
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:radial-gradient(120% 120% at 50% 40%, transparent 55%, var(--vign-c));
+  }
+
+  .auth-wrap{ position:relative; z-index:1; width:100%; max-width:400px; }
+
+  .brand{
+    text-align:center; margin-bottom:34px; user-select:none;
+  }
+  .brand .sigil{
+    width:64px; height:64px; margin:0 auto 16px;
+    border:1.5px solid var(--amber); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 28px var(--glow), inset 0 0 14px var(--glow);
+    animation:sigilPulse 4s ease-in-out infinite;
+  }
+  @keyframes sigilPulse{
+    0%,100%{ box-shadow:0 0 22px var(--glow), inset 0 0 10px var(--glow); }
+    50%   { box-shadow:0 0 36px var(--glow), inset 0 0 18px var(--glow); }
+  }
+  .brand .sigil svg{ width:34px; height:34px; stroke:var(--amber-hi); }
+  .brand h1{
+    font-family:var(--font-serif); font-size:34px; font-weight:400;
+    letter-spacing:.28em; color:var(--ink); text-indent:.28em;
+  }
+  .brand .sub{
+    margin-top:8px; font-size:12px; letter-spacing:.34em; text-indent:.34em;
+    color:var(--ink-faint); text-transform:uppercase;
+  }
+
+  .card{
+    background:var(--surface);
+    border:var(--hairline); border-radius:var(--radius);
+    padding:30px 28px 26px;
+    box-shadow:0 18px 50px var(--shadow);
+    backdrop-filter:blur(4px);
+  }
+
+  /* 登录 / 注册 切换 */
+  .tabs{
+    display:flex; gap:0; margin-bottom:26px;
+    border:var(--hairline); border-radius:var(--radius-s); overflow:hidden;
+  }
+  .tabs button{
+    flex:1; padding:11px 0; border:0; cursor:pointer;
+    background:transparent; color:var(--ink-soft);
+    font-family:var(--font-sans); font-size:14px; letter-spacing:.14em;
+    transition:all .25s;
+  }
+  .tabs button.active{
+    background:var(--block); color:var(--block-ink); font-weight:600;
+  }
+
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block; margin-bottom:7px;
+    font-size:12px; letter-spacing:.16em; color:var(--ink-soft);
+  }
+  .field input{
+    width:100%; padding:12px 14px;
+    background:var(--bg-2); color:var(--ink);
+    border:var(--hairline); border-radius:var(--radius-s);
+    font-family:var(--font-sans); font-size:15px;
+    outline:none; transition:border-color .2s, box-shadow .2s;
+  }
+  .field input:focus{
+    border-color:var(--amber); box-shadow:0 0 0 3px var(--glow);
+  }
+  .field input::placeholder{ color:var(--ink-faint); }
+
+  /* 邀请码字段默认收起，注册时才展开 */
+  #inviteField{ display:none; overflow:hidden; animation:slideIn .3s ease; }
+  .mode-register #inviteField{ display:block; }
+  @keyframes slideIn{ from{ opacity:0; transform:translateY(-6px);} to{opacity:1; transform:none;} }
+
+  /* 自动登录 */
+  .row-opts{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:4px 0 20px;
+  }
+  .remember{
+    display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+    font-size:13px; color:var(--ink-soft);
+  }
+  .remember input{ display:none; }
+  .remember .box{
+    width:18px; height:18px; flex:none;
+    border:var(--hairline); border-radius:5px; background:var(--bg-2);
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s;
+  }
+  .remember .box svg{ width:12px; height:12px; stroke:var(--block-ink); opacity:0; transform:scale(.4); transition:all .18s; }
+  .remember input:checked + .box{ background:var(--amber); border-color:var(--amber); }
+  .remember input:checked + .box svg{ opacity:1; transform:scale(1); }
+  .remember .hint{ font-size:11px; color:var(--ink-faint); }
+
+  .submit{
+    width:100%; padding:13px 0; border:0; border-radius:var(--radius-s);
+    background:var(--block); color:var(--block-ink);
+    font-family:var(--font-sans); font-size:15px; font-weight:600; letter-spacing:.2em;
+    cursor:pointer; transition:transform .15s, box-shadow .2s, opacity .2s;
+  }
+  .submit:hover{ box-shadow:0 6px 22px var(--glow); transform:translateY(-1px); }
+  .submit:active{ transform:translateY(0); }
+  .submit:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+  .msg{
+    min-height:20px; margin-top:14px; text-align:center;
+    font-size:13px; letter-spacing:.04em;
+  }
+  .msg.err{ color:var(--wine); }
+  .msg.ok{ color:var(--amber-hi); }
+
+  .foot{
+    margin-top:26px; text-align:center;
+    font-size:11px; letter-spacing:.2em; color:var(--ink-faint);
+  }
+
+  /* 轻微入场 */
+  .auth-wrap{ animation:rise .5s cubic-bezier(.2,.7,.3,1); }
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+<div class="auth-wrap" id="authWrap">
+  <div class="brand">
+    <div class="sigil">
+      <!-- 月相 / 圆环 印记 -->
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 3a9 9 0 0 0 0 18" fill="currentColor" stroke="none" opacity=".35"/>
+        <circle cx="12" cy="12" r="9"/>
+      </svg>
+    </div>
+    <h1>AEON</h1>
+    <div class="sub">lifedesk · 私人领域</div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="tabs">
+      <button id="tabLogin" class="active" type="button">登 录</button>
+      <button id="tabRegister" type="button">注 册</button>
+    </div>
+
+    <form id="authForm" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="username">用户名</label>
+        <input id="username" type="text" placeholder="你的名字" required maxlength="32">
+      </div>
+
+      <div class="field">
+        <label for="password">密码</label>
+        <input id="password" type="password" placeholder="至少 4 位" required minlength="4">
+      </div>
+
+      <div class="field" id="inviteField">
+        <label for="invite">邀请码</label>
+        <input id="invite" type="text" placeholder="需要有效邀请码才能注册">
+      </div>
+
+      <div class="row-opts">
+        <label class="remember">
+          <input type="checkbox" id="remember" checked>
+          <span class="box">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12.5l5 5L20 6.5"/>
+            </svg>
+          </span>
+          自动登录
+        </label>
+        <span class="hint" id="rememberHint">30 天内免登录</span>
+      </div>
+
+      <button class="submit" id="submitBtn" type="submit">进 入</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+
+  <div class="foot">AEON · 仅限受邀者</div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const card   = $('card'), wrap = $('authWrap');
+  const tabL = $('tabLogin'), tabR = $('tabRegister');
+  const form = $('authForm'), msg = $('msg'), btn = $('submitBtn');
+  const fUser = $('username'), fPass = $('password'), fInv = $('invite');
+  const remember = $('remember'), rememberHint = $('rememberHint');
+
+  // 主题跟随全站记忆
+  document.documentElement.dataset.theme = localStorage.getItem('aeon_theme') || 'dark';
+
+  let mode = 'login'; // login | register
+
+  function setMode(m){
+    mode = m;
+    tabL.classList.toggle('active', m === 'login');
+    tabR.classList.toggle('active', m === 'register');
+    card.classList.toggle('mode-register', m === 'register');
+    btn.textContent = m === 'login' ? '进 入' : '创建账号';
+    setMsg('', '');
+    if (m === 'register') fInv.focus();
+  }
+  tabL.onclick = () => setMode('login');
+  tabR.onclick = () => setMode('register');
+
+  function setMsg(text, type){
+    msg.textContent = text || '';
+    msg.className = 'msg' + (type ? ' ' + type : '');
+  }
+
+  remember.addEventListener('change', () => {
+    rememberHint.textContent = remember.checked ? '30 天内免登录' : '本次会话有效';
+  });
+
+  // 登录成功后回跳目标（门禁带过来的 redirect 参数）
+  // 白名单：只允许站内页面路径，防开放跳转
+  const rawRedirect = new URLSearchParams(location.search).get('redirect') || '/index.html';
+  const redirect = (rawRedirect && !/^[a-z]+:/i.test(rawRedirect) && !rawRedirect.startsWith('//'))
+    ? rawRedirect
+    : '/index.html';
+
+  // 已登录则直接进入（自动登录 localStorage / 会话级 sessionStorage 都算）
+  // 异步校验 token 有效性：无效/过期就清除，留在登录页（防「无效 token 死循环」）
+  async function tryAutoEnter(){
+    const token = localStorage.getItem('aeon_token') || sessionStorage.getItem('aeon_token');
+    if (!token) return; // 没有 token，正常显示登录表单
+    try {
+      const r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (r.ok){ location.replace(redirect); return; }
+    } catch(e){}
+    localStorage.removeItem('aeon_token'); localStorage.removeItem('aeon_user');
+    sessionStorage.removeItem('aeon_token'); sessionStorage.removeItem('aeon_user');
+  }
+  tryAutoEnter();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = fUser.value.trim();
+    const password = fPass.value;
+    const invite   = fInv.value.trim();
+
+    if (!username){ setMsg('请输入用户名', 'err'); fUser.focus(); return; }
+    if (!password || password.length < 4){ setMsg('密码至少 4 位', 'err'); fPass.focus(); return; }
+    if (mode === 'register' && !invite){ setMsg('注册需要邀请码', 'err'); fInv.focus(); return; }
+
+    btn.disabled = true;
+    btn.textContent = mode === 'login' ? '验证中…' : '创建中…';
+    setMsg('', '');
+
+    try {
+      const body = { username, password };
+      if (mode === 'register') body.invite_code = invite;
+
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await r.json().catch(() => ({}));
+
+      if (!r.ok){
+        setMsg(data.detail || (mode === 'login' ? '登录失败' : '注册失败'), 'err');
+        btn.disabled = false;
+        btn.textContent = mode === 'login' ? '进 入' : '创建账号';
+        return;
+      }
+
+      // 自动登录：localStorage（持久） / 否：sessionStorage（会话级）
+      const store = remember.checked ? localStorage : sessionStorage;
+      // 清掉另一处，避免双 token 冲突
+      localStorage.removeItem('aeon_token');
+      sessionStorage.removeItem('aeon_token');
+      store.setItem('aeon_token', data.token);
+      store.setItem('aeon_user', data.username || username);
+
+      setMsg(mode === 'login' ? '欢迎回来' : '账号已创建', 'ok');
+      btn.textContent = '进入中…';
+      setTimeout(() => location.replace(redirect), 350);
+    } catch (err){
+      setMsg('网络异常，请稍后再试', 'err');
+      btn.disabled = false;
+      btn.textContent = mode === 'login' ? '进 入' : '创建账号';
+    }
+  });
+})();
+</script>
+</body>
+</html>

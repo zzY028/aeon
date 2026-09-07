@@ -6,6 +6,8 @@
 <title>Aeon · 早报 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-auth.js"></script>
+<script>aeonRequireLogin();</script>
 <script src="/static/common/aeon-modal.js"></script>
 <script src="/static/common/aeon-subtitle.js"></script>
 <style>
@@ -153,7 +155,7 @@
 
 <script>
 const API = '';
-let TOKEN = localStorage.getItem('aeon_token') || '';
+let TOKEN = aeonGetToken();
 
 async function init(){
   const now = new Date();
@@ -166,7 +168,7 @@ async function api(path, method='GET', body=null){
   const opt = { method, headers: hdr() };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(API + path, opt);
-  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (r.status === 401){ aeonToLogin(); throw new Error('未登录'); }
   if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
   return r.json();
 }

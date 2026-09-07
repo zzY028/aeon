@@ -6,6 +6,8 @@
 <title>Aeon · 知识库 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-auth.js"></script>
+<script>aeonRequireLogin();</script>
 <script src="/static/common/aeon-modal.js"></script>
 <style>
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
@@ -104,6 +106,7 @@
       </div>
 
       <div class="stats-row" id="statsRow"></div>
+      <div class="card frame" id="wikiHint" style="display:none;padding:16px 18px;line-height:1.7;color:var(--ink-soft);font-size:13px"></div>
 
       <div class="view-tabs">
         <button class="btn on" data-c="recent" onclick="showView('recent',this)">最近更新</button>
@@ -130,14 +133,14 @@
 
 <script>
 const API = '';
-let TOKEN = localStorage.getItem('aeon_token') || '';
+let TOKEN = aeonGetToken();
 
 function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
 async function api(path, method='GET', body=null){
   const opt = { method, headers: hdr() };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(API + path, opt);
-  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (r.status === 401){ aeonToLogin(); throw new Error('未登录'); }
   if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
   return r.json();
 }
@@ -172,12 +175,33 @@ function mdToHtml(md){
 }
 
 async function init(){
-  const ov = await api('/api/wiki/overview');
+  let ov;
+  try {
+    ov = await api('/api/wiki/overview');
+  } catch(e){
+    document.getElementById('statsRow').innerHTML =
+      `<div class="card frame" style="padding:18px">知识库加载失败：${esc(e.message||'未知错误')}</div>`;
+    return;
+  }
   document.getElementById('statsRow').innerHTML = `
     <div class="card frame stat-card"><div class="v">${ov.stats.concepts||0}</div><div class="k">概念</div></div>
     <div class="card frame stat-card"><div class="v">${ov.stats.entities||0}</div><div class="k">实体</div></div>
     <div class="card frame stat-card"><div class="v">${ov.stats.summaries||0}</div><div class="k">摘要</div></div>
     <div class="card frame stat-card"><div class="v">${ov.stats.comparisons||0}</div><div class="k">对比</div></div>`;
+
+  // 空知识库时给出明确指引 + 实际目录，避免「打开发现什么都没有」
+  const hint = document.getElementById('wikiHint');
+  if (hint){
+    if (!ov.total){
+      hint.style.display = '';
+      hint.innerHTML = `<b>知识库还是空的。</b>把 <code>.md</code> 文件放进
+        <code>${esc(ov.pages_dir || '~/Wiki/pages')}</code> 下的
+        concepts / entities / summaries / comparisons 任一目录，刷新即可显示。
+        想换目录，给服务设置环境变量 <code>AEON_WIKI_ROOT</code>。`;
+    } else {
+      hint.style.display = 'none';
+    }
+  }
   showView('recent');
 }
 async function showView(cat, btn){

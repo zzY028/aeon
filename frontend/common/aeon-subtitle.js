@@ -7,7 +7,7 @@
     async show(pageKey){
       const el = document.getElementById('aeonSubtitle');
       if (!el) return;
-      const TOKEN = localStorage.getItem('aeon_token') || '';
+      const TOKEN = (window.aeonGetToken ? aeonGetToken() : (localStorage.getItem('aeon_token') || ''));
       let text = '';
       try {
         // 尝试 AI 字幕

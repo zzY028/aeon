@@ -40,7 +40,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False, index=True)
-    password = Column(String, nullable=False)  # 明文暂存，后续换 hash
+    password = Column(String, nullable=False)  # PBKDF2-SHA256 哈希（services.auth.hash_password）
     is_admin = Column(Boolean, default=False)
     invite_code = Column(String, default=None)
     created_at = Column(DateTime, default=datetime.utcnow)

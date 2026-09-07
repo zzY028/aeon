@@ -23,6 +23,9 @@
   .hero{ display:grid; grid-template-columns:400px 1fr; gap:28px; align-items:stretch }
   .orbit-card{ display:flex; align-items:center; justify-content:center; padding:28px 16px }
   .orbit-card svg{ max-width:340px; width:100% }
+  /* 行星点：绕轨道圆心旋转（transform-origin 取 viewBox 中心 160,160），
+     与 .orbit 的 stroke-dasharray 同 duration/easing → 视觉同步顺时针 */
+  .orbit-dot{ transform-box:view-box; transform-origin:160px 160px; transition:transform .8s ease; will-change:transform }
   .dims{ display:flex; flex-direction:column; justify-content:center; gap:20px; padding:26px }
   .dim-row{ display:grid; grid-template-columns:34px 86px 1fr 52px; gap:12px; align-items:center }
   .dim-row .ic{ width:20px;height:20px;color:var(--amber) }
@@ -52,6 +55,8 @@
     .date-block{ text-align:left }
   }
 </style>
+<script src="/static/common/aeon-auth.js"></script>
+<script>aeonRequireLogin();</script>
 <script src="/static/common/aeon-modal.js"></script>
 <script src="/static/common/aeon-data.js"></script>
 <script src="/static/common/aeon-subtitle.js"></script>
@@ -86,10 +91,8 @@
         <svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
       <a href="briefing.html">
         <svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a>
-      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
+      <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
       <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
-
-
       <a href="settings.html">
         <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
     </nav>
@@ -152,12 +155,12 @@
             <circle cx="160" cy="160" r="92"  stroke="#b97f2e" class="orbit" data-dash="404.6 578.1"/>
             <circle cx="160" cy="160" r="68"  stroke="#8b5a2b" class="orbit" data-dash="393.1 427.3"/>
           </g>
-          <!-- 行星点 -->
+          <!-- 行星点：均以 12 点方向为 0% 起点，绕圆心旋转到进度角度（JS 控制 rotate） -->
           <g filter="url(#glow)">
-            <circle cx="20.3"  cy="151.2" r="6"   fill="#e8bd7d"/>
-            <circle cx="80.6"  cy="75.4"  r="5.5" fill="#d4a053"/>
-            <circle cx="72.5"  cy="188.4" r="5"   fill="#b97f2e"/>
-            <circle cx="127.2" cy="100.4" r="4.5" fill="#8b5a2b"/>
+            <circle cx="160" cy="20"  r="6"   fill="#e8bd7d" class="orbit-dot" data-r="140" data-p="0"/>
+            <circle cx="160" cy="44"  r="5.5" fill="#d4a053" class="orbit-dot" data-r="116" data-p="0"/>
+            <circle cx="160" cy="68"  r="5"   fill="#b97f2e" class="orbit-dot" data-r="92"  data-p="0"/>
+            <circle cx="160" cy="92"  r="4.5" fill="#8b5a2b" class="orbit-dot" data-r="68"  data-p="0"/>
           </g>
           <text x="160" y="166" text-anchor="middle" class="num hal"
                 font-size="58" fill="var(--amber-hi)" font-family="Courier New,monospace">82</text>
@@ -290,34 +293,18 @@ document.getElementById('themeBtn').onclick = () => {
 
 /* ---------- API ---------- */
 const API = '';
-let TOKEN = localStorage.getItem('aeon_token') || '';
+let TOKEN = aeonGetToken();
 function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
 async function api(path, method='GET', body=null){
   const opt = { method, headers: hdr() };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(API + path, opt);
-  if (r.status === 401){ showLogin(); throw new Error('未登录'); }
+  if (r.status === 401){ aeonToLogin(); throw new Error('未登录'); }
   if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
   return r.json();
 }
 
-/* ---------- 登录 ---------- */
-async function showLogin(){
-  // Aeon 风格登录弹窗（用户名 + 密码）
-  const name = await aeonPrompt('Aeon 登录 · 用户名', 'Y');
-  if (name === null) return;
-  const pass = await aeonPrompt('密码', '');
-  if (pass === null) return;
-  try {
-    const d = await api('/api/login','POST',{ username:name, password:pass });
-    TOKEN = d.token;
-    localStorage.setItem('aeon_token', d.token);
-    localStorage.setItem('aeon_user', d.username);
-    initData();
-  } catch(e) {
-    await aeonAlert('登录失败：' + e.message);
-  }
-}
+/* ---------- 登录（旧弹窗已废弃，统一跳 login.html，由 aeon-auth.js 门禁处理） ---------- */
 
 /* ---------- 首页数据（真实 API） ---------- */
 async function initData(){
@@ -391,6 +378,26 @@ function calcScore(book){
   return { ledger: ledgerScore, habit: habitScore, schedule: scheduleScore, media: mediaScore };
 }
 
+/* 行星点定位：圆点静态放在 12 点方向（0% 起点），用 rotate 绕圆心 (160,160) 旋转。
+   角度 = 360° × 进度 → rotate 过渡走的是圆弧，与 .orbit 的 stroke-dasharray
+   增长完全同步（同 duration/easing），视觉上就是「圆点沿环顺时针走到进度末端」。
+   相比旧版 translate 直线位移：不会出现「先飞到奇怪位置再落回轨道」的割裂感。 */
+function orbitDeg(p){
+  return 360 * (p / 100);           // 0% → 0°（12 点），100% → 360°（绕满一圈）
+}
+function placeOrbitDots(dims, opts){
+  opts = opts || {};
+  const dots = document.querySelectorAll('.orbit-dot');
+  dots.forEach((d, i) => {
+    const p = (dims && dims[i] != null) ? dims[i] : (parseFloat(d.dataset.p) || 0);
+    const deg = orbitDeg(p);
+    if (opts.instant) d.style.transition = 'none';
+    else if (!d.style.transition) d.style.transition = 'transform .8s ease';
+    d.style.transform = `rotate(${deg.toFixed(2)}deg)`;
+    if (opts.instant){ void d.getBoundingClientRect(); d.style.transition = ''; }
+  });
+}
+
 function updateOrbit(book){
   if (!book) return;
   const scores = calcScore(book);
@@ -403,7 +410,7 @@ function updateOrbit(book){
     animateNum(numEl, current, score, 800);
   }
 
-  // 2. 四维轨道环（dash 更新）
+  // 2. 四维轨道环（dash 更新）+ 行星点随进度就位
   const orbits = document.querySelectorAll('.orbit');
   const dims = [scores.ledger, scores.habit, scores.schedule, scores.media];
   const radii = [140, 116, 92, 68];
@@ -414,6 +421,7 @@ function updateOrbit(book){
     c.style.transition = 'stroke-dasharray .8s ease';
     c.style.strokeDasharray = dash;
   });
+  placeOrbitDots(dims);
 
   // 3. 四维文字行（进度条 + 百分比 + 提示）
   const rows = document.querySelectorAll('.dim-row');
@@ -522,18 +530,19 @@ document.getElementById('dateWeek').textContent = wk;
 document.getElementById('reelLine').textContent =
   'REEL 27 · ' + wk.replace('星期','').toUpperCase() + ' · ' + now.getFullYear() + '.' + mm + '.' + dd;
 
-/* ---------- 入场：进度环/进度条显影 ---------- */
-requestAnimationFrame(() => {
-  document.querySelectorAll('.orbit').forEach((c, i) => {
-    const dash = c.dataset.dash;
-    c.style.strokeDasharray = '0 9999';
-    c.style.transition = 'stroke-dasharray 1.2s cubic-bezier(.2,.8,.2,1) ' + (i * 0.15) + 's';
-    requestAnimationFrame(() => c.style.strokeDasharray = dash);
-  });
-  document.querySelectorAll('.pbar > i').forEach(el => {
-    setTimeout(() => el.style.width = el.dataset.w, 200);
-  });
-});
+/* ---------- 数据驱动入场：先清零 HTML 演示值，真实数据到位后 0→真实 一次显影 ----------
+   说明：HTML 里写死的 76/88/70/92（环 dash、行星点、中心数字、进度条）只是无数据时的
+   设计占位。若入场动画先扫到这些演示值、数据到了再跳真实值，会看到「先怪位置再对位置」。
+   所以这里同步清零，让首帧就是 0 状态；updateOrbit(book) 拿到真实数据后统一平滑到位。 */
+(function(){
+  document.querySelectorAll('.orbit').forEach(c => { c.style.strokeDasharray = '0 9999'; });
+  placeOrbitDots([0, 0, 0, 0], { instant: true });   // 行星点归 12 点方向（进度 0）
+  const _num = document.querySelector('.orbit-card svg text.num');
+  if (_num) _num.textContent = '0';
+  document.querySelectorAll('.pbar > i').forEach(el => el.style.width = '0');
+  document.querySelectorAll('.dim-row .pc').forEach(el => el.textContent = '0');
+  document.querySelectorAll('.dim-row .tip').forEach(el => el.textContent = '数据加载中…');
+})();
 
 /* ---------- 票券一键处理（演示） ---------- */
 function resolveTicket(btn){

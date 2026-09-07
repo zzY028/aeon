@@ -6,7 +6,10 @@
 <title>Aeon · 文件 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-auth.js"></script>
+<script>aeonRequireLogin();</script>
 <script src="/static/common/aeon-modal.js"></script>
+<script src="/static/vendor/tus.min.js"></script>
 <style>
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
   .page-head .left{ flex:1; min-width:260px }
@@ -33,6 +36,8 @@
   .f-empty{ text-align:center; color:var(--ink-faint); padding:40px 0 }
 
   .back-btn{ margin-bottom:14px }
+  .up-track{ height:8px; background:var(--surface-2); border:var(--hairline); border-radius:99px; overflow:hidden }
+  .up-fill{ height:100%; width:0; background:var(--amber); border-radius:99px; transition:width .15s ease }
   @media (max-width:880px){ .f-size{ display:none } }
 </style>
 </head>
@@ -88,7 +93,7 @@
 
 <script>
 const API = '';
-let TOKEN = localStorage.getItem('aeon_token') || '';
+let TOKEN = aeonGetToken();
 let curPath = '';
 
 function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
@@ -96,7 +101,7 @@ async function api(path, method='GET', body=null){
   const opt = { method, headers: hdr() };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(API + path, opt);
-  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (r.status === 401){ aeonToLogin(); throw new Error('未登录'); }
   if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
   return r.json();
 }
@@ -108,7 +113,14 @@ function fmtSize(n){
   return (n/1048576).toFixed(1) + ' MB';
 }
 
-async function load(path){
+let ROOT_LABEL = null;   // 服务端实际生效的文件根目录（来自 /api/files/meta）
+async function loadRootLabel(){
+  try { const m = await api('/api/files/meta'); ROOT_LABEL = m.root || null; }
+  catch(e) { ROOT_LABEL = null; }
+}
+
+async function load(path) {
+  if (ROOT_LABEL === null) await loadRootLabel();
   curPath = path || '';
   const d = await api('/api/files' + (curPath ? '?path=' + encodeURIComponent(curPath) : ''));
   renderCrumbs(d.path, d.parent);
@@ -117,7 +129,7 @@ async function load(path){
 function renderCrumbs(path, parent){
   const parts = path.split('/').filter(Boolean);
   let acc = '';
-  const html = ['<a onclick="load(\'\')">/root</a>'];
+  const html = [`<a onclick="load('')" title="${esc(ROOT_LABEL || '')}">${esc(ROOT_LABEL || '根目录')}</a>`];
   parts.forEach((p, i) => {
     acc += (acc ? '/' : '') + p;
     if (i === parts.length - 1){
@@ -163,7 +175,7 @@ function renderList(d){
 async function previewFile(full, name){
   try {
     const r = await fetch('/api/files/preview?path=' + encodeURIComponent(full), { headers: hdr() });
-    if (r.status === 401){ location.href='index.html'; return; }
+    if (r.status === 401){ aeonToLogin(); return; }
     if (!r.ok){ const e = await r.json().catch(()=>({})); aeonAlert(e.detail || '无法预览'); return; }
     const ct = r.headers.get('content-type') || '';
     if (ct.startsWith('image/')){
@@ -192,19 +204,185 @@ function uploadFile(){
   inp.onchange = async () => {
     const f = inp.files[0];
     if (!f) return;
-    const fd = new FormData();
-    fd.append('file', f);
-    fd.append('path', curPath);
-    try {
-      const r = await fetch('/api/files/upload', { method:'POST', headers:{ 'Authorization':'Bearer '+TOKEN }, body: fd });
-      if (r.status === 401){ location.href='index.html'; return; }
+    if (f.size > 20 * 1024 * 1024 * 1024){ aeonAlert('超过 20GB 上限'); return; }
+
+    // 上传进度弹窗
+    const mask = document.createElement('div');
+    mask.className = 'modal-mask open';
+    mask.style.zIndex = '700';
+    mask.innerHTML = `<div class="modal" style="max-width:460px;width:92vw">
+      <div class="m-title">上传中</div>
+      <div style="font-size:13px;color:var(--ink-soft);word-break:break-all;margin:2px 0 16px">${esc(f.name)}</div>
+      <div class="up-track"><div class="up-fill" id="upFill"></div></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);margin-top:6px">
+        <span id="upSpeed">准备中…</span><span id="upPct">0%</span>
+      </div>
+      <div style="font-size:11px;color:var(--ink-faint);margin-top:8px" id="upNote">分块并行上传 · 断线自动续传</div>
+      <div class="m-actions" style="margin-top:18px">
+        <button class="btn" id="upCancel">取消</button>
+      </div>
+    </div>`;
+    document.body.appendChild(mask);
+    const fill = mask.querySelector('#upFill');
+    const pctEl = mask.querySelector('#upPct');
+    const speedEl = mask.querySelector('#upSpeed');
+    const noteEl = mask.querySelector('#upNote');
+
+    // ── 多端口多片并行上传 ─────────────────────────────
+    // 原理：浏览器对每个 域名:端口 最多 6 条 TCP 连接（h1）
+    // 7 个端口（443 + 8882~8887）→ 42 条连接池 → 真正并行
+    // 大文件切成 N 片，每片独立 tus 上传（断点续传），摊到各端口
+    const HOST = location.hostname; // aeon.org.cn
+    const PORTS = ['', ':8882', ':8883', ':8884', ':8885', ':8886', ':8887'];
+    const CHANNELS = PORTS.map(p => 'https://' + HOST + p + '/api/tus/');
+
+    // 决定片数：>200MB 用 32 片，>40MB 用 16 片，否则 6 片（接近旧的单文件多路）
+    // 每片独立走 tus，内部不再并行（片间并行已够）
+    let slices;
+    if (f.size > 200 * 1024 * 1024) slices = 32;
+    else if (f.size > 40 * 1024 * 1024) slices = 16;
+    else if (f.size > 20 * 1024 * 1024) slices = 8;
+    else slices = Math.max(1, Math.min(4, Math.ceil(f.size / (5 * 1024 * 1024))));
+    const partSize = Math.ceil(f.size / slices);
+    // 标准 UUID（服务端 merge 校验用）
+    const session = (crypto.randomUUID ? crypto.randomUUID() :
+      'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      }));
+
+    let done = 0, cancelled = false, failed = false;
+    let lastLoaded = 0, lastTs = 0, started = false;
+    const uploads = [];
+
+    const updatePct = () => {
+      const total = f.size || 1;
+      const pct = Math.min(100, Math.round(done / total * 100));
+      fill.style.width = pct + '%';
+      pctEl.textContent = pct + '%';
+    };
+    const note = (txt, force) => {
+      if (!started || force){ noteEl.textContent = txt; }
+    };
+
+    // 服务器合并分片
+    async function mergeParts(){
+      const r = await fetch('/api/files/merge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+        body: JSON.stringify({ session, filename: f.name, path: curPath || '', total: slices })
+      });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.detail || '失败');
-      aeonAlert(`已上传 ${d.name}`);
-      load(curPath);
-    } catch(e) { aeonAlert('上传失败：' + e.message); }
+      if (!r.ok) throw new Error(d.detail || '合并失败');
+      return d;
+    }
+
+    // 上传单片的 tus 任务
+    function uploadSlice(i){
+      return new Promise((resolve, reject) => {
+        const start = i * partSize;
+        const end = Math.min(f.size, start + partSize);
+        const blob = f.slice(start, end);
+        const channel = CHANNELS[i % CHANNELS.length];
+        const up = new tus.Upload(blob, {
+          endpoint: channel,
+          chunkSize: Math.min(5 * 1024 * 1024, Math.max(1024 * 1024, partSize)),
+          retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            filename: f.name,
+            filetype: f.type || 'application/octet-stream',
+            path: curPath || '',
+            session: session,
+            part_index: String(i),
+            part_total: String(slices)
+          },
+          headers: { Authorization: 'Bearer ' + TOKEN },
+          onError: err => {
+            if (up.aborted) return;
+            reject(err);
+          },
+          onProgress: (sent) => {
+            if (cancelled) return;
+            // 本片已传字节（tus 的 sent 含断点续传历史，只增不减）
+            up._sent = Math.max(up._sent || 0, sent);
+            // 汇总所有片的已传字节 → 总进度
+            done = 0;
+            for (let k = 0; k < uploads.length; k++){
+              if (uploads[k] && uploads[k]._sent !== undefined) done += Math.min(uploads[k]._sent, partSize);
+            }
+            updatePct();
+            const now = Date.now();
+            if (!started && done > 0){
+              started = true;
+              lastLoaded = done; lastTs = now;
+              noteEl.textContent = '传输中…';
+            }
+            if (started && now - lastTs >= 800){
+              const bps = (done - lastLoaded) / ((now - lastTs) / 1000);
+              if (bps > 0) speedEl.textContent = fmtSpeed(bps);
+              lastLoaded = done; lastTs = now;
+            }
+          },
+          onSuccess: () => {
+            up._sent = partSize; // 该片完成
+            let t = 0;
+            for (let k = 0; k < uploads.length; k++){
+              if (uploads[k] && uploads[k]._sent !== undefined) t += Math.min(uploads[k]._sent, partSize);
+            }
+            done = t;
+            updatePct();
+            resolve();
+          }
+        });
+        uploads[i] = up;
+        up.start();
+      });
+    }
+
+    // 启动所有分片：全部 start，浏览器自动调度到各端口连接池（7×6=42 并发）
+    async function runAll(){
+      try {
+        const jobs = [];
+        for (let i = 0; i < slices; i++) jobs.push(uploadSlice(i));
+        await Promise.all(jobs);
+        // 全部片传完 → 合并（单片时后端已直接落位，无需 merge）
+        if (cancelled) return;
+        if (slices > 1) {
+          note('分片上传完成，正在合并…', true);
+          const d = await mergeParts();
+          mask.remove();
+          aeonAlert(`已上传 ${d.name}（${fmtSize(d.size)}）`);
+        } else {
+          mask.remove();
+          aeonAlert(`已上传 ${f.name}`);
+        }
+        load(curPath);
+      } catch(e) {
+        if (cancelled) return;
+        mask.remove();
+        aeonAlert('上传失败：' + (e && e.message ? e.message : '网络中断'));
+      }
+    }
+
+    mask.querySelector('#upCancel').onclick = () => {
+      cancelled = true;
+      uploads.forEach(u => { try { u.abort(); } catch(_){} });
+      mask.remove();
+      aeonAlert('已取消上传');
+    };
+
+    const parallelTxt = slices > 8 ? `建立连接 · ${slices} 片 × 7 通道…` : `建立连接 · ${slices} 片并行…`;
+    noteEl.textContent = parallelTxt;
+    runAll();
   };
   inp.click();
+}
+function fmtSpeed(bps){
+  if (!isFinite(bps) || bps <= 0) return '';
+  if (bps < 1024) return (bps|0) + ' B/s';
+  if (bps < 1048576) return (bps/1024).toFixed(1) + ' KB/s';
+  return (bps/1048576).toFixed(1) + ' MB/s';
 }
 // 预览弹窗（文本）
 function aeonShowText(name, html){
@@ -264,7 +442,12 @@ const saved = localStorage.getItem('aeon_theme');
 if (saved === 'light') document.documentElement.removeAttribute('data-theme');
 
 load().catch(e => {
-  document.getElementById('fileList').innerHTML = `<div class="f-empty" style="color:var(--wine)">加载失败：${esc(e.message)}</div>`;
+  const box = document.getElementById('fileList');
+  box.innerHTML = `<div class="f-empty" style="color:var(--wine);line-height:1.8;text-align:left;padding:18px">
+    <b>加载失败：${esc(e.message)}</b><br>
+    ${ROOT_LABEL ? `当前文件根目录：<code>${esc(ROOT_LABEL)}</code>` : ''}
+    <br>若目录不存在，给服务设置环境变量 <code>AEON_FILES_ROOT</code> 指向要浏览的目录后重启。
+  </div>`;
 });
 </script>
 </body>

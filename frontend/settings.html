@@ -40,8 +40,20 @@
   .data-actions{ display:flex; gap:10px; flex-wrap:wrap }
   .demo-tip{ font-size:11.5px; color:var(--ink-faint); margin-top:10px }
 
+  .model-pick{ display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:6px 0 14px }
+  .model-pick .fld{ display:flex; flex-direction:column; gap:6px }
+  .model-pick label{ font-size:11.5px; color:var(--ink-faint); font-family:var(--font-mono) }
+  .model-pick select{ background:var(--surface-2); color:var(--ink); border:var(--hairline); border-radius:10px;
+    padding:10px 12px; font-size:14px; min-width:190px; font-family:var(--font-serif) }
+  .model-pick select:focus{ outline:none; border-color:var(--amber) }
+  .model-cur{ font-size:12.5px; color:var(--amber); font-family:var(--font-mono); padding:2px 0 0 }
+  .model-cur b{ color:var(--amber-hi) }
+  .model-hint{ font-size:11px; color:var(--ink-faint); margin-top:6px; line-height:1.7 }
+
   @media (max-width:880px){ .bal-amount{ font-size:34px } }
 </style>
+<script src="/static/common/aeon-auth.js"></script>
+<script>aeonRequireLogin();</script>
 <script src="/static/common/aeon-modal.js"></script>
 </head>
 <body>
@@ -63,11 +75,9 @@
       <a href="schedule.html"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M9 15l2 2 4-4"/></svg>日程</a>
       <a href="wishlist.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.6A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>待买</a>
       <a href="media.html"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 8v8l6-4z"/></svg>书影音</a>
-      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a><a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a><a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
-      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
-
+      <a href="briefing.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 7l7-4 7 4M5 17l7 4 7-4"/></svg>早报</a>
       <a href="files.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>文件</a>
-
+      <a href="wiki.html"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 4-9 4-9-4z"/><path d="M3 11l9 4 9-4M3 15l9 4 9-4"/></svg>知识库</a>
       <a href="settings.html" class="on"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
     </nav>
     <div class="side-foot">
@@ -88,13 +98,29 @@
         </div>
       </div>
 
-      <!-- 模型余额 -->
+      <!-- 模型中心：切换 + 余额 -->
       <div class="sec">
-        <h3>模型余额</h3>
-        <div class="card frame bal-card">
+        <h3>模型中心</h3>
+        <div class="card frame" style="padding:6px 18px">
+          <div class="model-cur" id="modelCur">加载中…</div>
+          <div class="model-pick">
+            <div class="fld">
+              <label>服务商</label>
+              <select id="modelProvider" onchange="fillModels()"></select>
+            </div>
+            <div class="fld">
+              <label>模型</label>
+              <select id="modelName"></select>
+            </div>
+            <button class="btn btn-primary" onclick="testSwitch()">切换并测试</button>
+          </div>
+          <div class="model-hint" id="modelHint">切换会先发一条测试请求，成功后保存，生活簿字幕等 AI 功能立刻用新模型。</div>
+        </div>
+
+        <div class="card frame bal-card" style="margin-top:14px">
           <div class="bal-amount"><span id="balNum">——</span><small id="balCur"> CNY</small></div>
           <div class="bal-meta">
-            <div class="row"><span>模型</span><b>DeepSeek</b></div>
+            <div class="row"><span>模型</span><b id="balProvider">DeepSeek</b></div>
             <div class="row"><span>状态</span><b id="balStatus">查询中…</b></div>
           </div>
           <button class="btn btn-primary" onclick="loadBalance()">↻ 刷新</button>
@@ -147,28 +173,93 @@
 
 <script>
 const API = '';
-let TOKEN = localStorage.getItem('aeon_token') || '';
+let TOKEN = aeonGetToken();
 
 function hdr(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
 async function api(path, method='GET', body=null){
   const opt = { method, headers: hdr() };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(API + path, opt);
-  if (r.status === 401){ location.href='index.html'; throw new Error('未登录'); }
+  if (r.status === 401){ aeonToLogin(); throw new Error('未登录'); }
   if (!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.detail || '请求失败'); }
   return r.json();
 }
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// ─── 模型中心：provider/模型加载 + 切换 ──────────────
+let MODEL_PROVIDERS = [];
+
+async function loadModelHub(){
+  const curEl = document.getElementById('modelCur');
+  try {
+    const [provs, cur] = await Promise.all([
+      api('/api/model/providers'),
+      api('/api/model/current')
+    ]);
+    MODEL_PROVIDERS = provs;
+    const pSel = document.getElementById('modelProvider');
+    pSel.innerHTML = provs.map(p =>
+      `<option value="${p.id}" ${p.id === cur.provider ? 'selected' : ''}>${esc(p.name)}${p.configured ? '' : '（未配 key）'}</option>`
+    ).join('');
+    fillModels(cur.model);
+    const r = cur.resolved;
+    curEl.innerHTML = r && r.configured
+      ? `当前：<b>${esc(r.provider)} · ${esc(r.model)}</b>`
+      : '当前：<b style="color:var(--wine)">未配置</b>';
+    loadBalance();
+  } catch(e) {
+    curEl.textContent = '加载失败：' + e.message;
+  }
+}
+
+function fillModels(selected){
+  const pid = document.getElementById('modelProvider').value;
+  const p = MODEL_PROVIDERS.find(x => x.id === pid);
+  const sel = document.getElementById('modelName');
+  if (!p) { sel.innerHTML = ''; return; }
+  sel.innerHTML = p.models.map(m =>
+    `<option value="${esc(m.id)}" ${m.id === selected ? 'selected' : ''}>${esc(m.label)}</option>`
+  ).join('');
+}
+
+async function testSwitch(){
+  const btn = event && event.target ? event.target : document.querySelector('.model-pick .btn');
+  const provider = document.getElementById('modelProvider').value;
+  const model = document.getElementById('modelName').value;
+  const hint = document.getElementById('modelHint');
+  const oldTxt = btn.textContent;
+  btn.textContent = '测试中…'; btn.disabled = true;
+  hint.textContent = '正在用 ' + model + ' 发测试请求…';
+  try {
+    const d = await api('/api/model/test', 'POST', { provider, model });
+    hint.innerHTML = `✓ 测试通过（${esc(model)} 回复：${esc(d.reply)}），已切换。`;
+    loadModelHub();
+  } catch(e) {
+    hint.innerHTML = `<span style="color:var(--wine)">✗ ${esc(e.message)}</span> 未切换，保持原配置。`;
+  } finally {
+    btn.textContent = oldTxt; btn.disabled = false;
+  }
+}
+
 // ─── 余额 ──────────────────────────────
 async function loadBalance(){
   const st = document.getElementById('balStatus');
   st.textContent = '查询中…';
+  const pid = document.getElementById('modelProvider');
+  const prov = pid && pid.value ? pid.value : 'deepseek';
+  document.getElementById('balProvider').textContent =
+    (MODEL_PROVIDERS.find(x => x.id === prov) || {}).name || 'DeepSeek';
   try {
-    const d = await api('/api/balance', 'POST', { provider: 'deepseek' });
-    document.getElementById('balNum').textContent = d.balance.toFixed(2);
-    document.getElementById('balCur').textContent = ' ' + d.currency;
-    st.textContent = d.is_available ? '正常' : '不可用';
+    const d = await api('/api/balance', 'POST', { provider: prov });
+    if (d.balance == null){
+      document.getElementById('balNum').textContent = '——';
+      document.getElementById('balCur').textContent = '';
+      st.textContent = d.note || '额度在控制台查看';
+    } else {
+      document.getElementById('balNum').textContent = d.balance.toFixed(2);
+      document.getElementById('balCur').textContent = ' ' + d.currency;
+      st.textContent = d.is_available ? '正常' : '不可用';
+    }
   } catch(e) {
     document.getElementById('balNum').textContent = '——';
     st.textContent = e.message;
@@ -233,9 +324,7 @@ async function loadUser(){
   } catch(e) { document.getElementById('userLabel').textContent = '—'; }
 }
 function logout(){
-  localStorage.removeItem('aeon_token');
-  localStorage.removeItem('aeon_user');
-  location.href = 'index.html';
+  aeonLogout(); // 统一清理 localStorage + sessionStorage，跳登录页
 }
 
 // ─── 启动 ──────────────────────────────
@@ -246,7 +335,7 @@ if (savedTheme === 'light'){
 }
 document.getElementById('sizeLabel').textContent =
   (localStorage.getItem('aeon_read_size') || '17') + 'px';
-loadBalance();
+loadModelHub();
 loadUser();
 </script>
 </body>
