@@ -6,6 +6,7 @@
 <title>Aeon · 今日指数 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
   /* ===== 页头 ===== */
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
@@ -97,10 +98,6 @@
         <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>设置</a>
     </nav>
     <div class="side-foot">
-      <button class="btn" id="themeBtn">
-        <svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z"/></svg>
-        切换晨昏
-      </button>
       <div class="moonbox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--amber)">
           <circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z" fill="currentColor" stroke="none"/>
@@ -150,17 +147,17 @@
           </g>
           <!-- 四维轨道进度（记账76 / 习惯88 / 日程70 / 书影音92） -->
           <g fill="none" stroke-width="7" stroke-linecap="round" transform="rotate(-90 160 160)" filter="url(#glow)">
-            <circle cx="160" cy="160" r="140" stroke="#e8bd7d" class="orbit" data-dash="668.5 879.7"/>
-            <circle cx="160" cy="160" r="116" stroke="#d4a053" class="orbit" data-dash="641.4 728.9"/>
-            <circle cx="160" cy="160" r="92"  stroke="#b97f2e" class="orbit" data-dash="404.6 578.1"/>
-            <circle cx="160" cy="160" r="68"  stroke="#8b5a2b" class="orbit" data-dash="393.1 427.3"/>
+            <circle cx="160" cy="160" r="140" class="orbit s-1" data-dash="668.5 879.7"/>
+            <circle cx="160" cy="160" r="116" class="orbit s-2" data-dash="641.4 728.9"/>
+            <circle cx="160" cy="160" r="92"  class="orbit s-3" data-dash="404.6 578.1"/>
+            <circle cx="160" cy="160" r="68"  class="orbit s-4" data-dash="393.1 427.3"/>
           </g>
           <!-- 行星点：均以 12 点方向为 0% 起点，绕圆心旋转到进度角度（JS 控制 rotate） -->
           <g filter="url(#glow)">
-            <circle cx="160" cy="20"  r="6"   fill="#e8bd7d" class="orbit-dot" data-r="140" data-p="0"/>
-            <circle cx="160" cy="44"  r="5.5" fill="#d4a053" class="orbit-dot" data-r="116" data-p="0"/>
-            <circle cx="160" cy="68"  r="5"   fill="#b97f2e" class="orbit-dot" data-r="92"  data-p="0"/>
-            <circle cx="160" cy="92"  r="4.5" fill="#8b5a2b" class="orbit-dot" data-r="68"  data-p="0"/>
+            <circle cx="160" cy="20"  r="6"   class="orbit-dot c-1" data-r="140" data-p="0"/>
+            <circle cx="160" cy="44"  r="5.5" class="orbit-dot c-2" data-r="116" data-p="0"/>
+            <circle cx="160" cy="68"  r="5"   class="orbit-dot c-3" data-r="92"  data-p="0"/>
+            <circle cx="160" cy="92"  r="4.5" class="orbit-dot c-4" data-r="68"  data-p="0"/>
           </g>
           <text x="160" y="166" text-anchor="middle" class="num hal"
                 font-size="58" fill="var(--amber-hi)" font-family="Courier New,monospace">82</text>
@@ -282,15 +279,6 @@
 </nav>
 
 <script>
-/* ---------- 主题：晨昏切换（记忆选择） ---------- */
-const htmlEl = document.documentElement;
-htmlEl.dataset.theme = localStorage.getItem('aeon_theme') || 'dark';
-document.getElementById('themeBtn').onclick = () => {
-  const next = htmlEl.dataset.theme === 'dark' ? 'light' : 'dark';
-  htmlEl.dataset.theme = next;
-  localStorage.setItem('aeon_theme', next);
-};
-
 /* ---------- API ---------- */
 const API = '';
 let TOKEN = aeonGetToken();

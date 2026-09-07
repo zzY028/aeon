@@ -6,6 +6,7 @@
 <title>Aeon · 书架阅读 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
   .page-head .left{ flex:1; min-width:260px }
@@ -357,8 +358,6 @@ document.addEventListener('keydown', e => {
 
 // ─── 启动 ──────────────────────────────
 document.documentElement.style.setProperty('--read-size', readSize + 'px');
-const savedTheme = localStorage.getItem('aeon_theme');
-if (savedTheme === 'light') document.documentElement.removeAttribute('data-theme');
 
 loadShelf().catch(e => { document.getElementById('shelf').innerHTML = `<div class="empty-tip" style="color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
 </script>

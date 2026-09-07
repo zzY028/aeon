@@ -4,88 +4,111 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>语料审查台 · 嘴硬心软筛选器</title>
+<link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
-  :root {
-    --bg: #16161d;
-    --surface: #1e1e28;
-    --card: #242433;
-    --ink: #e8e6e0;
-    --ink-soft: #a8a6b0;
-    --amber: #c4a86c;
-    --amber-hi: #d9bc7e;
-    --green: #7fb069;
-    --red: #c96f5e;
-    --line: #34344a;
+  /* 配色改为沿用 Aeon 全局 token。原先这里自带一整套深蓝黑 :root
+     （#16161d / #1e1e28 / #242433），是浅色主题下整页发暗的根源。
+     本页只补充「状态色 + 半透明吸顶背景」，两套主题各给一套值。 */
+  :root{
+    --card: var(--surface);
+    --head-bg: rgba(253,251,247,.90);
+    --ok:#4d7a2c;   --bad:#8c2b25;
+    --ok-wash: rgba(77,122,44,.09);
+    --bad-wash: rgba(140,43,37,.07);
+    --amber-wash: rgba(164,112,42,.13);
+  }
+  [data-theme="dark"]{
+    --card: var(--surface);
+    --head-bg: rgba(28,17,6,.90);
+    --ok:#7fb069;   --bad:#c96f5e;
+    --ok-wash: rgba(127,176,105,.11);
+    --bad-wash: rgba(201,111,94,.09);
+    --amber-wash: rgba(212,160,83,.15);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: var(--bg); color: var(--ink);
-    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--ink);
+    font-family: var(--font-sans);
     min-height: 100vh;
   }
   .header {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(22,22,29,.92); backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
+    background: var(--head-bg); backdrop-filter: blur(10px);
+    border-bottom: var(--hairline);
     padding: 14px 20px;
-    display: flex; align-items: center; gap: 16px;
+    display: flex; align-items: center; gap: 16px; flex-wrap:wrap;
   }
-  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: .5px; }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: .5px; font-family:var(--font-serif) }
   .header .stat { font-size: 13px; color: var(--ink-soft); }
   .header .stat b { color: var(--amber-hi); }
   .header .actions { margin-left: auto; display: flex; gap: 10px; }
   .btn {
     background: var(--card); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 8px;
-    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    border: var(--hairline); border-radius: var(--radius-s);
+    padding: 8px 14px; min-height:40px; font:inherit; font-size: 13px; cursor: pointer;
     transition: all .15s;
   }
   .btn:hover { border-color: var(--amber); color: var(--amber-hi); }
   .btn.primary {
-    background: var(--amber); color: #1a1a1a; border: none; font-weight: 600;
+    background: var(--amber); color: var(--block-ink); border: none; font-weight: 600;
   }
-  .btn.primary:hover { background: var(--amber-hi); color: #1a1a1a; }
+  .btn.primary:hover { background: var(--amber-hi); color: var(--block-ink); }
   .cats { display: flex; gap: 8px; padding: 14px 20px 4px; flex-wrap: wrap; }
   .cat-chip {
-    padding: 6px 12px; border-radius: 20px; font-size: 12px;
+    padding: 8px 13px; border-radius: 20px; font-size: 12px;
     background: var(--card); border: 1px solid var(--line); color: var(--ink-soft);
-    cursor: pointer; transition: all .15s;
+    cursor: pointer; transition: all .15s; min-height:36px;
   }
-  .cat-chip.on { background: var(--amber); color: #1a1a1a; border-color: var(--amber); }
+  .cat-chip:hover{ color:var(--ink); border-color: var(--amber) }
+  .cat-chip.on { background: var(--amber); color: var(--block-ink); border-color: var(--amber); }
   .list { padding: 14px 20px 40px; max-width: 760px; margin: 0 auto; }
   .item {
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    background: var(--card); border: var(--hairline); border-radius: var(--radius);
     padding: 16px; margin-bottom: 12px; transition: all .2s;
   }
-  .item.chosen { border-color: var(--green); background: rgba(127,176,105,.08); }
-  .item.rejected { border-color: var(--red); background: rgba(201,111,94,.06); opacity: .75; }
+  .item.chosen { border-color: var(--ok); background: var(--ok-wash); }
+  .item.rejected { border-color: var(--bad); background: var(--bad-wash); opacity: .78; }
   .item .meta { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   .item .src {
     font-size: 11px; color: var(--amber-hi);
-    background: rgba(196,168,108,.12); padding: 2px 8px; border-radius: 4px;
+    background: var(--amber-wash); padding: 2px 8px; border-radius: 4px;
   }
-  .item .text { font-size: 14px; line-height: 1.8; color: var(--ink); white-space: pre-wrap; }
+  .item .text { font-size: 14px; line-height: 1.8; color: var(--ink); white-space: pre-wrap; overflow-wrap:anywhere }
   .item .text .role { color: var(--amber); font-weight: 600; }
   .item .btns { display: flex; gap: 8px; margin-top: 12px; }
   .item .btns .btn { flex: 1; padding: 7px; font-size: 12px; }
-  .btn.yes { border-color: var(--green); color: var(--green); }
-  .btn.yes:hover { background: var(--green); color: #1a1a1a; }
-  .btn.no { border-color: var(--red); color: var(--red); }
-  .btn.no:hover { background: var(--red); color: #1a1a1a; }
+  .btn.yes { border-color: var(--ok); color: var(--ok); }
+  .btn.yes:hover { background: var(--ok); color: var(--block-ink); }
+  .btn.no { border-color: var(--bad); color: var(--bad); }
+  .btn.no:hover { background: var(--bad); color: var(--block-ink); }
   .btn.undo { border-color: var(--line); color: var(--ink-soft); }
-  .footer { padding: 20px; text-align: center; color: var(--ink-soft); font-size: 12px; }
+  .footer { padding: 20px calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom));
+    text-align: center; color: var(--ink-soft); font-size: 12px; }
   .empty { text-align: center; padding: 60px 20px; color: var(--ink-soft); }
+  /* 抬高，避开右下角的全局主题入口 */
   .toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--amber); color: #1a1a1a; padding: 10px 20px; border-radius: 8px;
-    font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; z-index: 200;
+    position: fixed; bottom: calc(76px + env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--amber); color: var(--block-ink); padding: 10px 20px;
+    border-radius: var(--radius-s); box-shadow:0 6px 22px var(--shadow);
+    font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; z-index: 210;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   @media (max-width: 600px) {
-    .header { padding: 12px 14px; }
+    .header { padding: 12px 14px; gap:10px }
     .header h1 { font-size: 15px; }
+    .header .actions{ margin-left:0; width:100% }
+    .header .actions .btn{ flex:1; justify-content:center }
     .list { padding: 12px 14px 40px; }
     .item { padding: 13px; }
+    .btn{ min-height:44px }
+    .cat-chip{ min-height:38px }
+  }
+  /* 同 reaction_test：右下角的悬浮主题入口会压住滚到底后的页脚提示，
+     窄屏把它抬到按钮上方。 */
+  @media (max-width:640px){
+    .footer{ padding-bottom: calc(64px + env(safe-area-inset-bottom)) }
   }
 </style>
 <script src="/static/common/aeon-auth.js"></script>
@@ -93,9 +116,14 @@
 </head>
 <body>
 
+<!-- 胶片质感层：与其他页面保持一致的整体基调 -->
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
+
 <div class="header">
   <h1>语料审查台</h1>
-  <div class="stat">已选 <b id="chosenCount">0</b> / <span id="totalCount">0</span> · 已弃 <b id="rejectedCount" style="color:var(--red)">0</b></div>
+  <div class="stat">已选 <b id="chosenCount">0</b> / <span id="totalCount">0</span> · 已弃 <b id="rejectedCount" style="color:var(--bad)">0</b></div>
   <div class="actions">
     <button class="btn" onclick="exportJSON()">导出选中</button>
     <button class="btn" onclick="resetAll()">清空</button>

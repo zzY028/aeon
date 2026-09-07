@@ -4,23 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>反应速度测试 · Reaction Test</title>
+<link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
-  :root {
-    --bg: #16161d; --ink: #e8e6e0; --ink-soft: #a8a6b0;
-    --amber: #c4a86c; --amber-hi: #d9bc7e; --line: #34344a;
-    --green: #7fb069; --red: #c96f5e; --blue: #7a9bc4;
+  /* 配色全部改为沿用 Aeon 全局 token，本页只补充「状态色」三项。
+     原先这里自带一整套深蓝黑 :root，是浅色主题下整页发暗的根源。 */
+  :root{
+    --ok:#4d7a2c;      --ok-bg:#e6efd8;      /* 变绿：可以点了 */
+    --bad:#8c2b25;     --bad-bg:#f4e1de;     /* 太早（用了主题酒红） */
+    --cool:#4a6a94;
+  }
+  [data-theme="dark"]{
+    --ok:#7fb069;      --ok-bg:#1c3a24;
+    --bad:#c96f5e;     --bad-bg:#3a1c1c;
+    --cool:#7a9bc4;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* 背景沿用全局 body 的胶片渐层，不另起炉灶 */
   body {
-    background: var(--bg); color: var(--ink);
-    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--ink);
+    font-family: var(--font-sans);
     min-height: 100vh; display: flex; flex-direction: column;
   }
   .header {
-    padding: 16px 20px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: var(--hairline);
+    display: flex; align-items: center; justify-content: space-between; gap:12px; flex-wrap:wrap;
   }
-  .header h1 { font-size: 17px; color: var(--amber-hi); }
+  .header h1 { font-size: 17px; color: var(--amber-hi); font-family:var(--font-serif) }
   .header .stats { font-size: 13px; color: var(--ink-soft); display: flex; gap: 18px; }
   .header .stats b { color: var(--amber); }
   .stage {
@@ -29,33 +39,57 @@
     position: relative;
   }
   .stage .msg { text-align: center; padding: 0 30px; }
-  .stage .msg h2 { font-size: 30px; font-weight: 600; margin-bottom: 12px; }
+  .stage .msg h2 { font-size: 30px; font-weight: 600; margin-bottom: 12px; font-family:var(--font-serif) }
   .stage .msg p { font-size: 15px; color: var(--ink-soft); }
   .stage .result {
     position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
     text-align: center; width: 100%; padding: 0 20px;
   }
-  .stage .result .big { font-size: 56px; font-weight: 700; color: var(--amber-hi); font-variant-numeric: tabular-nums; }
+  .stage .result .big { font-size: 56px; font-weight: 700; color: var(--amber-hi); font-variant-numeric: tabular-nums;
+    font-family:var(--font-mono); letter-spacing:-.03em }
   .stage .result .label { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
   .stage .result .rank { font-size: 14px; margin-top: 10px; color: var(--amber); }
-  /* 状态色 */
-  .stage.idle { background: var(--bg); }
-  .stage.wait { background: var(--bg); }
-  .stage.go { background: #1c3a24; }
-  .stage.too-early { background: #3a1c1c; }
-  .stage.result-mode { background: var(--bg); }
-  .footer { padding: 14px 20px; border-top: 1px solid var(--line); text-align: center; font-size: 12px; color: var(--ink-faint); }
-  .restart-btn {
-    background: none; border: 1px solid var(--amber); color: var(--amber);
-    border-radius: 8px; padding: 8px 20px; font-size: 14px; cursor: pointer; margin-top: 18px;
-    transition: all .15s;
+  /* 状态底色：全部走 token，两套主题各自取值，不再写死深蓝黑 */
+  .stage.idle,.stage.wait,.stage.result-mode { background: transparent; }
+  .stage.go { background: var(--ok-bg); }
+  .stage.too-early { background: var(--bad-bg); }
+  .stage.go .msg h2 { color: var(--ok) }
+  .stage.too-early .msg h2 { color: var(--bad) }
+  .footer {
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+    border-top: var(--hairline); text-align: center;
+    font-size: 12px; color: var(--ink-faint);
   }
-  .restart-btn:hover { background: var(--amber); color: #1a1a1a; }
+  .restart-btn {
+    background: var(--surface); border: 1px solid var(--amber); color: var(--amber);
+    border-radius: var(--radius-s); padding: 10px 20px; min-height:44px; font:inherit; font-size: 14px;
+    cursor: pointer; margin-top: 18px; transition: .15s;
+  }
+  .restart-btn:hover { background: var(--amber); color: var(--block-ink); box-shadow:0 0 16px var(--glow) }
+  @media (max-width:600px){
+    .header{ padding:12px 14px; gap:8px }
+    .header h1{ font-size:16px }
+    .header .stats{ font-size:12px; gap:12px }
+    .stage .msg h2{ font-size:26px }
+    .stage .result .big{ font-size:46px }
+    .footer{ font-size:11.5px }
+  }
+  /* 悬浮的主题入口钉在右下角。窄屏时底部这行提示会正好从它下面穿过
+     （实测 320/360/390 三档都压字），这里把提示抬到按钮上方留出通道。
+     宽屏提示是居中的短句，够不到最右侧，不需要这条。 */
+  @media (max-width:640px){
+    .footer{ padding-bottom: calc(64px + env(safe-area-inset-bottom)) }
+  }
 </style>
 <script src="/static/common/aeon-auth.js"></script>
 <script>aeonRequireLogin();</script>
 </head>
 <body>
+
+<!-- 胶片质感层：与其他页面保持一致的整体基调 -->
+<div class="fx fx-leak"></div>
+<div class="fx fx-grain"></div>
+<div class="fx fx-vignette"></div>
 
 <div class="header">
   <h1>⚡ 反应速度测试</h1>

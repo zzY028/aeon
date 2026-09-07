@@ -6,6 +6,7 @@
 <title>Aeon · 知识库 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <script src="/static/common/aeon-auth.js"></script>
 <script>aeonRequireLogin();</script>
 <script src="/static/common/aeon-modal.js"></script>
@@ -251,7 +252,8 @@ async function drawGraph(){
     // 边
     const edges = g.edges.filter(e => nodeMap[e.source] && nodeMap[e.target]);
     // 简单力导向迭代
-    const catColor = { concepts: '#d4a053', entities: '#c4a86c', summaries: '#8b5a2b' };
+    const catColor = { concepts: 'c-2', entities: 'c-3', summaries: 'c-4' };      // SVG 节点（走 fill）
+    const catBg    = { concepts: 'bg-2', entities: 'bg-3', summaries: 'bg-4' };   // HTML 图例（走 background）
     for (let iter = 0; iter < 80; iter++){
       // 斥力
       for (let i = 0; i < nodes.length; i++){
@@ -296,14 +298,14 @@ async function drawGraph(){
     nodes.forEach(n => {
       svg += `<g class="g-node" transform="translate(${n.x},${n.y})" style="cursor:pointer"
         onclick="openPage('${esc(n.id)}.md','${esc(n.label)}')">
-        <circle r="${n.r}" fill="${catColor[n.cat] || '#d4a053'}" filter="url(#gn)"/>
+        <circle r="${n.r}" class="${catColor[n.cat] || 'c-2'}" filter="url(#gn)"/>
         <text y="${n.r + 12}" text-anchor="middle" font-size="9" fill="var(--ink-soft)" font-family="var(--font-mono)">${esc(n.label.slice(0, 12))}</text>
       </g>`;
     });
     svg += `</svg>`;
     // 图例
     const legend = `<div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--ink-faint);flex-wrap:wrap">
-      ${['concepts','entities','summaries'].map(c => `<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${catColor[c]};margin-right:4px"></span>${catLabel[c]}</span>`).join('')}
+      ${['concepts','entities','summaries'].map(c => `<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px" class="${catBg[c] || 'bg-2'}"></span>${catLabel[c]}</span>`).join('')}
       <span style="margin-left:auto">点击节点查看页面</span></div>`;
     el.innerHTML = svg + legend;
     // 拖拽：整个图拖动（简单版）
@@ -325,21 +327,6 @@ function closeReader(){
   document.getElementById('wikiReader').classList.remove('open');
   document.documentElement.style.overflow = '';
 }
-
-// 主题切换
-const themeBtn = document.createElement('button');
-themeBtn.className = 'btn';
-themeBtn.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:95';
-themeBtn.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z"/></svg>晨昏';
-themeBtn.onclick = () => {
-  const cur = document.documentElement.getAttribute('data-theme');
-  const nxt = cur === 'dark' ? '' : 'dark';
-  document.documentElement.setAttribute('data-theme', nxt);
-  localStorage.setItem('aeon_theme', nxt || 'light');
-};
-document.body.appendChild(themeBtn);
-const saved = localStorage.getItem('aeon_theme');
-if (saved === 'light') document.documentElement.removeAttribute('data-theme');
 
 init().catch(e => { document.getElementById('wikiContent').innerHTML = `<div class="empty-tip" style="color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
 </script>

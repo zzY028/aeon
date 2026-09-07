@@ -6,6 +6,7 @@
 <title>Aeon · 习惯 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
   /* ===== 习惯页 ===== */
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
@@ -304,23 +305,6 @@ async function loadHeatmap(){
     document.getElementById('hmStart').textContent = days[0].date;
   }
 }
-
-// ─── 主题切换 ──────────────────────────
-const themeBtn = document.createElement('button');
-themeBtn.className = 'btn';
-themeBtn.style.cssText = 'position:fixed;bottom:18px;right:18px;z-index:95';
-themeBtn.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c-4 0-7-3-7-7s3-7 7-7c0-2-1-3 0-4z"/></svg>晨昏';
-themeBtn.onclick = () => {
-  const cur = document.documentElement.getAttribute('data-theme');
-  const nxt = cur === 'dark' ? '' : 'dark';
-  document.documentElement.setAttribute('data-theme', nxt);
-  localStorage.setItem('aeon_theme', nxt || 'light');
-};
-document.body.appendChild(themeBtn);
-
-// 恢复主题
-const saved = localStorage.getItem('aeon_theme');
-if (saved === 'light') document.documentElement.removeAttribute('data-theme');
 
 init().catch(e => { document.getElementById('habitGrid').innerHTML = `<div class="card frame" style="grid-column:1/-1;color:var(--wine)">加载失败：${esc(e.message)}</div>`; });
 

@@ -6,6 +6,7 @@
 <title>Aeon · 设置 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:22px }
   .page-head .left{ flex:1; min-width:260px }
@@ -266,14 +267,18 @@ async function loadBalance(){
   }
 }
 
-// ─── 主题 ──────────────────────────────
+// ─── 主题（统一走全局 AeonTheme，避免多套实现互相打架）────
 function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme');
-  const nxt = cur === 'dark' ? '' : 'dark';
-  document.documentElement.setAttribute('data-theme', nxt);
-  localStorage.setItem('aeon_theme', nxt || 'light');
-  document.getElementById('themeToggle').classList.toggle('on', nxt === 'dark');
+  if (window.AeonTheme) window.AeonTheme.toggle();
 }
+function syncThemeToggle(t){
+  const el = document.getElementById('themeToggle');
+  if (el) el.classList.toggle('on', t === 'dark');
+}
+// 主题在别处被改动时（侧栏按钮 / 底栏图标 / 抽屉分段），本页开关同步回显
+document.addEventListener('aeon:themechange', e => {
+  syncThemeToggle((e.detail && e.detail.theme) || (window.AeonTheme && window.AeonTheme.get()));
+});
 
 // ─── 阅读字号 ──────────────────────────
 function adjSize(d){
@@ -328,11 +333,8 @@ function logout(){
 }
 
 // ─── 启动 ──────────────────────────────
-const savedTheme = localStorage.getItem('aeon_theme');
-if (savedTheme === 'light'){
-  document.documentElement.removeAttribute('data-theme');
-  document.getElementById('themeToggle').classList.remove('on');
-}
+// 主题已由 common/aeon-shell.js 统一恢复，此处只回显开关状态
+syncThemeToggle(window.AeonTheme ? window.AeonTheme.get() : 'dark');
 document.getElementById('sizeLabel').textContent =
   (localStorage.getItem('aeon_read_size') || '17') + 'px';
 loadModelHub();

@@ -405,6 +405,103 @@ svg.ic{ width:20px;height:20px;flex:none;
 /* 移动端底导航（旧的手工 tabbar 退役，改由 .side 统一变形，见下方 media） */
 .tabbar{ display:none }
 
+/* ---------- 图表 / 插画用的暖色色阶（两套主题各一套，杜绝跨主题串色） ----------
+   之前部分页面把深色主题的琥珀值（#d4a053 / #8b5a2b 等）写死在 SVG 里，
+   浅色主题下就成了突兀的棕色残留。统一走下面这些 class。 */
+.c-1{fill:var(--amber-hi)}    .s-1{stroke:var(--amber-hi)}
+.c-2{fill:var(--amber)}       .s-2{stroke:var(--amber)}
+.c-3{fill:var(--amber-deep)}  .s-3{stroke:var(--amber-deep)}
+.c-4{fill:var(--wine)}        .s-4{stroke:var(--wine)}
+.c-5{fill:var(--ink-soft)}    .s-5{stroke:var(--ink-soft)}
+/* 同上，给 HTML 元素用的背景版本（图例 / 小色块） */
+.bg-1{background:var(--amber-hi)}   .bg-2{background:var(--amber)}
+.bg-3{background:var(--amber-deep)} .bg-4{background:var(--wine)}
+.bg-5{background:var(--ink-soft)}
+
+/* ---------- 主题切换入口（由 common/aeon-shell.js 统一注入） ---------- */
+/* 说明：全站只有这一个来源，页面里不再各写一份，杜绝「时有时无」 */
+.theme-x{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:9px 14px; min-height:40px; border-radius:var(--radius-s);
+  border:var(--hairline); background:var(--surface); color:var(--ink-soft);
+  font:inherit; font-size:13px; cursor:pointer; white-space:nowrap;
+  transition:color .18s, border-color .18s, background .18s;
+}
+.theme-x:hover{ color:var(--ink); border-color:var(--amber); box-shadow:0 0 0 1px var(--amber) }
+/* ⚠️ 关键：内部的图标/文案容器必须收住宽度。
+   早期版本 SVG 未限宽时会撑到 145px，横向溢出把相邻的「更多」盖住并吞掉点击。 */
+.theme-x > span{
+  display:inline-flex; align-items:center; justify-content:center;
+  flex:none; max-width:100%; line-height:0;
+}
+.theme-x .ic{ width:17px;height:17px;color:var(--amber);flex:none }
+.theme-x .js-ttxt{ line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+/* 无侧栏页（登录 / 独立工具页）：右下浮动，高于胶片层(91) */
+.theme-x.is-fab{
+  position:fixed; right:16px; bottom:16px; z-index:200;
+  background:var(--surface); box-shadow:0 4px 18px var(--shadow);
+}
+/* 桌面側栏入口占满一行，位置固定不被挤压 */
+.side-foot .theme-x{ width:100% }
+/* 以下两项由 common/aeon-shell.js 注入，移动端（≤880px）才显示 */
+.nav-theme,
+.nav-more{ display:none }
+
+/* ---------- 「更多」抽屉 ---------- */
+.aeon-sheet-mask{
+  position:fixed; inset:0; z-index:480; display:none;
+  align-items:flex-end; justify-content:center;
+  background:rgba(20,10,2,.5); backdrop-filter:blur(2px);
+}
+.aeon-sheet-mask.open{ display:flex }
+.aeon-sheet{
+  width:100%; max-width:520px; max-height:82vh; overflow-y:auto;
+  background:var(--bg); border:1px solid var(--line); border-bottom:none;
+  border-radius:18px 18px 0 0;
+  padding:8px 18px calc(22px + env(safe-area-inset-bottom));
+  box-shadow:0 -8px 40px var(--shadow);
+  animation:sheetUp .26s cubic-bezier(.2,.8,.2,1);
+  -webkit-overflow-scrolling:touch;
+}
+@keyframes sheetUp{ from{ transform:translateY(100%) } to{ transform:none } }
+.sheet-handle{
+  width:42px; height:4px; border-radius:99px; background:var(--line);
+  margin:0 auto 16px; cursor:pointer;
+}
+.sheet-block + .sheet-block{ margin-top:20px }
+.sheet-cap{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px;
+}
+.sheet-seg{ display:flex; gap:8px }
+.sheet-seg button{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+  min-height:46px; padding:10px 12px; border-radius:var(--radius-s);
+  border:var(--hairline); background:var(--surface); color:var(--ink-soft);
+  font:inherit; font-size:13.5px; cursor:pointer; transition:.16s;
+}
+.sheet-seg button .ic{ width:18px;height:18px;color:var(--amber) }
+.sheet-seg button.on{
+  background:var(--block); color:var(--block-ink); border-color:var(--block);
+  box-shadow:0 0 16px var(--glow);
+}
+.sheet-seg button.on .ic{ color:var(--block-ink) }
+.sheet-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
+.sheet-item{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px;
+  min-height:74px; padding:12px 6px; border-radius:var(--radius-s);
+  border:var(--hairline); background:var(--surface);
+  color:var(--ink-soft); text-decoration:none; font-size:12px;
+  transition:.16s; text-align:center;
+}
+.sheet-item .ic{ width:22px;height:22px;color:var(--amber) }
+.sheet-item:hover{ color:var(--ink); border-color:var(--amber) }
+.sheet-item.on{
+  color:var(--block-ink); background:var(--block); border-color:var(--block);
+}
+.sheet-item.on .ic{ color:var(--block-ink) }
+.sheet-locked{ overflow:hidden }
+
 /* ---------- 移动端适配（竖屏单手 · 多断点） ---------- */
 @media (max-width:880px){
   /* ① 侧边栏 → 底部可横滑 Tab 栏（全站 11 个页面统一生效，无需改 HTML） */
@@ -422,18 +519,34 @@ svg.ic{ width:20px;height:20px;flex:none;
   .side .moonbox{ display:none }
   .side .nav{
     flex-direction:row; margin-top:0; gap:0; width:100%;
-    overflow-x:auto; overflow-y:hidden;
-    -webkit-overflow-scrolling:touch; scrollbar-width:none;
-    scroll-snap-type:x proximity; padding:0 2px;
+    /* 不再横滑：底栏固定为 4 个一级入口 + 「更多」+ 主题切换，一排排得下 */
+    overflow:visible; padding:0 2px;
   }
   .side .nav::-webkit-scrollbar{ display:none }
   .side .nav a{
-    flex:0 0 auto; min-width:64px; min-height:52px;
+    /* 等分剩余宽度（原来靠 min-width 挤出滚动，10 项时必然拥挤） */
+    flex:1 1 0; min-width:0; min-height:54px;
     flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    padding:7px 8px; font-size:10.5px; text-align:center;
+    padding:7px 2px; font-size:10.5px; text-align:center;
     border:none; border-radius:0; color:var(--ink-faint);
-    scroll-snap-align:start;
   }
+  /* 二级入口收进「更多」抽屉，桌面端不受影响（仍是完整 10 项侧栏） */
+  .side .nav a.nav-sub{ display:none }
+  .side .nav a.nav-more{ display:flex }
+  /* 给右下角的主题入口留位置，避免导航项滑到它下面 */
+  .side .nav{ padding:0 56px 0 2px }
+  /* 主题入口脱离 nav 的 flex 流，绝对定位到底栏右端。
+     （放在 flex 流里时它撑出的宽度会盖住相邻的「更多」，吞掉点击） */
+  .side .nav .nav-theme{
+    position:absolute; right:2px; bottom:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    width:52px; height:54px; flex:none;
+    padding:0; border:none; border-radius:0; background:transparent;
+    color:var(--ink-faint); font:inherit; font-size:10px; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; overflow:hidden;
+  }
+  .side .nav .nav-theme .ic{ width:22px;height:22px;color:var(--amber) }
+  .side .nav .nav-theme:active{ background:var(--surface-2) }
   .side .nav a:hover{ background:transparent }
   .side .nav a.on{
     color:var(--amber); background:transparent; border:none;
@@ -490,7 +603,9 @@ svg.ic{ width:20px;height:20px;flex:none;
   .main{ padding:14px 12px calc(84px + env(safe-area-inset-bottom)) }
   .card{ padding:16px 14px; border-radius:14px }
   .sec-head h2{ font-size:18px }
-  .side .nav a{ min-width:60px; min-height:50px; font-size:10px; padding:6px 6px }
+  .side .nav a{ min-height:52px; font-size:10px; padding:6px 2px }
+  .side .nav .nav-theme{ width:50px; height:52px; font-size:9.5px }
+  .side .nav{ padding:0 52px 0 2px }
   .side .nav a .ic{ width:21px;height:21px }
   .ticket{ padding:12px 12px 12px 16px }
   .ticket .t-body b{ font-size:14px }
@@ -504,7 +619,9 @@ svg.ic{ width:20px;height:20px;flex:none;
 @media (max-width:380px){
   body{ font-size:14px }
   .main{ padding:12px 10px calc(80px + env(safe-area-inset-bottom)) }
-  .side .nav a{ min-width:56px; font-size:9.5px }
+  .side .nav a{ font-size:9.5px }
+  .side .nav .nav-theme{ width:46px; font-size:9px }
+  .side .nav{ padding:0 48px 0 2px }
   .btn{ padding:11px 14px }
   .sec-head{ gap:8px }
   .sec-head h2{ font-size:17px }

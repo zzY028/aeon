@@ -6,6 +6,7 @@
 <title>Aeon · 记账理财 — 1999 电影级旧味</title>
 <link rel="icon" href="/static/assets/decor/logo.svg">
 <link rel="stylesheet" href="/static/styles/theme.css">
+<script src="/static/common/aeon-shell.js"></script>
 <style>
   .page-head{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:24px }
   .page-head h1{ font-family:var(--font-serif); font-size:clamp(28px,3.6vw,40px); margin-top:8px }
@@ -30,11 +31,11 @@
   .donut-flex{ display:flex; align-items:center; gap:20px; flex-wrap:wrap }
   .donut-flex svg{ width:190px; flex:none }
   .c-amber{fill:var(--amber-hi)} .c-wine{fill:var(--wine)} .c-deep{fill:var(--amber-deep)}
-  .c-gold{fill:var(--amber)} .c-oat{fill:#c9b18a} .c-coffee{fill:#6b4a2a}
-  .c-rust{fill:#a85c3c} .c-brown{fill:#5a4632}
+  .c-gold{fill:var(--amber)} .c-oat{fill:var(--amber-hi)} .c-coffee{fill:var(--amber-deep)}
+  .c-rust{fill:var(--wine)} .c-brown{fill:var(--ink-soft)}
   .s-amber{stroke:var(--amber-hi)} .s-wine{stroke:var(--wine)} .s-deep{stroke:var(--amber-deep)}
-  .s-gold{stroke:var(--amber)} .s-oat{stroke:#c9b18a} .s-coffee{stroke:#6b4a2a}
-  .s-rust{stroke:#a85c3c} .s-brown{stroke:#5a4632}
+  .s-gold{stroke:var(--amber)} .s-oat{stroke:var(--amber-hi)} .s-coffee{stroke:var(--amber-deep)}
+  .s-rust{stroke:var(--wine)} .s-brown{stroke:var(--ink-soft)}
   .axis{stroke:var(--ink-faint);stroke-opacity:.4} .grid-l{stroke:var(--ink-faint);stroke-opacity:.16;stroke-dasharray:3 5}
   .ctext{fill:var(--ink-faint)} .cval{fill:var(--amber-hi)}
 
@@ -84,10 +85,6 @@
       <a href="settings.html"><svg class="ic" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5.5 21v-7M10.5 21V5M15.5 21V10M20 21v-3.5"/></svg>设置</a>
     </nav>
     <div class="side-foot">
-      <button class="btn" id="themeBtn">
-        <svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z"/></svg>
-        切换晨昏
-      </button>
       <div class="moonbox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--amber)">
           <circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 0 18 5.5 9 0 0 0 0-18z" fill="currentColor" stroke="none"/>
@@ -200,10 +197,9 @@
         <span class="smallcaps" id="flowCount"></span></div>
       <div class="card">
         <div class="filters">
+          <!-- 月份选项由真实数据生成（见 renderMonthOptions），不再写死演示月份 -->
           <select class="input" id="qMonth">
             <option value="">全部月份</option>
-            <option value="2026-08" selected>2026 年 8 月</option>
-            <option value="2026-07">2026 年 7 月</option>
           </select>
           <select class="input" id="qType">
             <option value="">收支全部</option><option value="out">仅支出</option><option value="in">仅收入</option>
@@ -231,14 +227,6 @@
 </nav>
 
 <script>
-/* ---------- 主题 ---------- */
-const htmlEl = document.documentElement;
-document.getElementById('themeBtn').onclick = () => {
-  const next = htmlEl.dataset.theme === 'dark' ? 'light' : 'dark';
-  htmlEl.dataset.theme = next;
-  localStorage.setItem('aeon_theme', next);
-};
-
 /* ---------- API（真实数据） ---------- */
 const API = '';
 let TOKEN = aeonGetToken();
@@ -274,12 +262,32 @@ async function loadApiData(){
         renderAll();
       }
     });
-  } catch(e) { /* 未登录/失败保持演示数据 */ }
+  } catch(e) {
+    // 原先这里空着，任何异常都会被无声吞掉，页面就一直停在演示数据上，
+    // 看起来「能打开」其实从没显示过真实账目。未登录属预期，其余一律报出来。
+    if (e && /401|未登录|Unauthorized/.test(e.message || '')) return;
+    console.error('[ledger] 加载真实数据失败，当前显示的是演示数据：', e);
+  }
+}
+/* ⚠️ 原先这里判断的是 renderTable / drawChart —— 这两个函数在本文件里根本不存在，
+   所以三个分支全落空，renderAll() 是个空壳：真实数据取回来了却从来没被画出来过。
+   实际负责渲染的是 renderFlow()（流水表）和 renderChart()（六个月柱状）。 */
+/* 月份下拉原先在 HTML 里写死了「2026 年 8 月」并 selected —— 真实账目是 9 月，
+   于是 filtered() 永远筛出 0 条，表格一片空白。改由真实数据生成。 */
+function renderMonthOptions(){
+  const sel = document.getElementById('qMonth');
+  if (!sel) return;
+  const months = [...new Set(T.map(x => String(x.d).slice(0,7)))].filter(Boolean).sort().reverse();
+  const keep = months.indexOf(sel.value) >= 0 ? sel.value : '';
+  sel.innerHTML = '<option value="">全部月份</option>' + months.map(m =>
+    `<option value="${m}">${m.slice(0,4)} 年 ${Number(m.slice(5))} 月</option>`).join('');
+  sel.value = keep;
 }
 function renderAll(){
-  if (typeof renderTable === 'function') renderTable();
+  renderMonthOptions();
+  if (typeof renderFlow === 'function') renderFlow();
   if (typeof renderChart === 'function') renderChart();
-  else if (typeof drawChart === 'function') drawChart();
+  if (typeof renderStats === 'function') renderStats();
 }
 /* ---------- 分类定义（图标 = assets/icons/cat-*.svg 同源） ---------- */
 const CATS = {
@@ -314,13 +322,25 @@ let T = [
 ];
 
 /* ---------- 六个月分组柱状（手写 SVG，JS 计算坐标） ---------- */
-const MONTHS = [['3月',5200,4100],['4月',5400,3800],['5月',5100,4500],['6月',5600,3900],['7月',5300,4200],['8月',5800,3286]];
-document.getElementById('bars').innerHTML = MONTHS.map(([m,inc,exp],i) => {
-  const x = 44 + i*86, hi = Math.round(inc*0.0276), he = Math.round(exp*0.0276);
-  return `<rect class="c-amber" x="${x}" y="${180-hi}" width="15" height="${hi}" rx="2"/>`
-       + `<rect class="c-wine" x="${x+19}" y="${180-he}" width="15" height="${he}" rx="2"/>`
-       + `<text class="ctext" x="${x+17}" y="200" text-anchor="middle" font-size="11">${m}</text>`;
-}).join('');
+/* ⚠️ 必须是 let：loadApiData() 会用真实的 /api/ledger/trend 结果整体替换它。
+   原来是 const，赋值抛 TypeError 却被引擎外的 try/catch 静默吞掉，
+   导致 renderAll() 永远执行不到 —— 真实账目取回来了，屏幕上却一直显示下面这套演示数据。 */
+let MONTHS = [['3月',5200,4100],['4月',5400,3800],['5月',5100,4500],['6月',5600,3900],['7月',5300,4200],['8月',5800,3286]];
+/* 原先这是一段顶层的「一次性」赋值：页面加载时按演示数据画一次就再也不动了。
+   抽成函数后，loadApiData() 拿到真实 trend 才能重画。 */
+function renderChart(){
+  const bars = document.getElementById('bars');
+  if (!bars) return;
+  const peak = Math.max(1, ...MONTHS.map(([,inc,exp]) => Math.max(inc, exp)));
+  const k = 150 / peak;   // 按真实峰值自适应，不再用写死的 0.0276
+  bars.innerHTML = MONTHS.map(([m,inc,exp],i) => {
+    const x = 44 + i*86, hi = Math.round(inc*k), he = Math.round(exp*k);
+    return `<rect class="c-amber" x="${x}" y="${180-hi}" width="15" height="${hi}" rx="2"/>`
+         + `<rect class="c-wine" x="${x+19}" y="${180-he}" width="15" height="${he}" rx="2"/>`
+         + `<text class="ctext" x="${x+17}" y="200" text-anchor="middle" font-size="11">${m}</text>`;
+  }).join('');
+}
+renderChart();
 
 /* ---------- 录入表单 ---------- */
 document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
