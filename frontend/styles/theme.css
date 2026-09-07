@@ -6,32 +6,33 @@
         切换主题：<html data-theme="dark"> 或去掉属性即为浅色
    ========================================================================== */
 
-/* ---------- 浅色 · 白昼胶片（褪色日光扫描件） ---------- */
+/* ---------- 浅色 · 白昼胶片（干净版：低噪 · 高对比 · 暖白） ---------- */
 :root{
-  --bg:        #e3d5ba;
-  --bg-2:      #d9c9a9;
-  --surface:   #ece1c8;
-  --surface-2: #e4d7b9;
-  --ink:       #2b1c0d;
-  --ink-soft:  #6b5433;
-  --ink-faint: #97805a;
-  --amber:     #b97f2e;   /* 焦糖（浅底加深保可读） */
-  --amber-hi:  #d4a053;
-  --amber-deep:#8b5a2b;
-  --wine:      #7a1f1f;   /* 酒红点缀 */
-  --line:      rgba(59,38,14,.24);
-  --line-soft: rgba(59,38,14,.12);
+  --bg:        #efe9dd;   /* 暖白底（原土黄 #e3d5ba，降饱和提亮） */
+  --bg-2:      #e6ded0;
+  --surface:   #fdfbf7;   /* 卡片近暖白，与底色拉开层次 */
+  --surface-2: #f2ece2;
+  --ink:       #241a10;
+  --ink-soft:  #5c4a33;   /* 加深：与卡面对比 ~8.5:1 */
+  --ink-faint: #7d6a4e;   /* 加深：原 #97805a 仅 3.1:1 → 现 ~4.9:1 */
+  --amber:     #a4702a;   /* 加深：原 #b97f2e 仅 3.0:1 → 现 ~4.6:1 */
+  --amber-hi:  #c08a45;
+  --amber-deep:#7d5220;
+  --wine:      #8c2b25;   /* 酒红点缀 */
+  --line:      rgba(59,38,14,.20);
+  --line-soft: rgba(59,38,14,.10);
   --block:     #2b1c0d;   /* 硬边色块 */
-  --block-ink: #ece1c8;
-  --glow:      rgba(212,160,83,.55);
-  --shadow:    rgba(43,28,13,.30);
-  --grain-op:  .30;
-  --vign-c:    rgba(28,16,4,.34);
-  --leak-op:   .45;
-  --photo-heat: sepia(.25) saturate(.92) contrast(.96);
+  --block-ink: #fdfbf7;
+  --glow:      rgba(160,112,42,.38);
+  --shadow:    rgba(43,28,13,.16);   /* 更轻盈的原色阴影 */
+  /* 胶片质感层在浅色下大幅收敛——原值偏重会让小屏显"脏" */
+  --grain-op:  .12;      /* 原 .30 */
+  --vign-c:    rgba(28,16,4,.14);  /* 原 .34 */
+  --leak-op:   .16;      /* 原 .45 */
+  --photo-heat: sepia(.18) saturate(.95) contrast(.98);
 
-  --radius:   14px;
-  --radius-s: 8px;
+  --radius:   16px;      /* 原 14，更现代 */
+  --radius-s: 10px;      /* 原 8 */
   --hairline: 1px solid var(--line);
 
   --font-serif: Georgia,'Times New Roman','Songti SC','SimSun',serif;
@@ -77,7 +78,15 @@ body{
   font-family:var(--font-sans);
   font-size:15px; line-height:1.65;
   -webkit-font-smoothing:antialiased;
+  /* 移动端：禁止 iOS 横屏自动放大字号、禁用下拉橡皮筋（更像原生 App） */
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  overscroll-behavior-y:none;
+  overflow-x:clip;
 }
+/* 标题/长串不断行导致横向溢出 */
+h1,h2,h3,h4,b,small{ overflow-wrap:anywhere }
+img,svg,video,canvas{ max-width:100% }
 ::selection{ background:var(--amber); color:var(--block-ink) }
 a{ color:inherit }
 button{ font:inherit }
@@ -393,24 +402,123 @@ svg.ic{ width:20px;height:20px;flex:none;
 .legend .dot{ width:10px;height:10px;border-radius:2px;flex:none }
 .legend .num{ margin-left:auto; color:var(--ink-soft) }
 
-/* 移动端底导航 */
+/* 移动端底导航（旧的手工 tabbar 退役，改由 .side 统一变形，见下方 media） */
 .tabbar{ display:none }
 
-/* ---------- 移动端适配（竖屏单手） ---------- */
+/* ---------- 移动端适配（竖屏单手 · 多断点） ---------- */
 @media (max-width:880px){
-  .side{ display:none }
-  .main{ padding:20px 16px 120px }
-  .tabbar{
-    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:80;
-    background:var(--surface); border-top:var(--hairline);
-    padding:6px 2px calc(8px + env(safe-area-inset-bottom));
+  /* ① 侧边栏 → 底部可横滑 Tab 栏（全站 11 个页面统一生效，无需改 HTML） */
+  .side{
+    position:fixed; left:0; right:0; bottom:0; top:auto;
+    width:auto; flex:none; height:auto;
+    flex-direction:row; padding:0;
+    border-right:none; border-top:var(--hairline);
+    padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -2px 22px var(--shadow);
+    z-index:80;
   }
-  .tabbar a{
-    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-    font-size:10px; color:var(--ink-faint); text-decoration:none; padding:5px 0;
+  .side .brand,
+  .side .side-foot,
+  .side .moonbox{ display:none }
+  .side .nav{
+    flex-direction:row; margin-top:0; gap:0; width:100%;
+    overflow-x:auto; overflow-y:hidden;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    scroll-snap-type:x proximity; padding:0 2px;
   }
-  .tabbar a.on{ color:var(--amber-hi) }
-  .tabbar a .ic{ width:21px;height:21px }
-  .sec-head{ margin:30px 0 14px }
+  .side .nav::-webkit-scrollbar{ display:none }
+  .side .nav a{
+    flex:0 0 auto; min-width:64px; min-height:52px;
+    flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    padding:7px 8px; font-size:10.5px; text-align:center;
+    border:none; border-radius:0; color:var(--ink-faint);
+    scroll-snap-align:start;
+  }
+  .side .nav a:hover{ background:transparent }
+  .side .nav a.on{
+    color:var(--amber); background:transparent; border:none;
+    box-shadow:inset 0 3px 0 var(--amber);
+  }
+  .side .nav a .ic{ width:22px;height:22px }
+
+  /* ② 主区留白：给底栏 + 安全区腾位置 */
+  .main{ padding:16px 14px calc(88px + env(safe-area-inset-bottom)) }
+  .wrap{ max-width:100% }
+
+  /* ③ 触控目标 ≥44px（原 36px 偏小、误触多） */
+  .btn{ padding:12px 18px; min-height:44px }
+  .btn .ic{ width:18px;height:18px }
+  .input,select.input{ padding:12px 14px; min-height:44px; font-size:16px } /* 16px 防 iOS 聚焦缩放 */
+  .chip{ padding:10px 14px; min-height:42px }
+  .seg{ width:100% }
+  .seg button{ flex:1; padding:11px 16px; min-height:42px }
+
+  /* ④ 密度与呼吸感 */
+  .card{ padding:18px 16px }
+  .flow-row{ gap:11px; padding:12px 4px }
+  .flow-row .f-ic{ width:38px;height:38px;flex:none }
+  .flow-row .f-amt{ font-size:15px; white-space:nowrap }
+  .ticket{ gap:11px; padding:13px 14px 13px 18px }
+  .ticket .t-ic{ width:36px;height:36px;flex:none }
+  .sec-head{ margin:26px 0 13px }
   .sec-head h2{ font-size:19px }
+
+  /* ⑤ 弹窗 → 底部抽屉（原生 App 手感） */
+  .modal-mask{ align-items:flex-end; padding:0 }
+  .modal{
+    max-width:none; width:100%; border-radius:18px 18px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    animation:sheetIn .26s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes sheetIn{ from{ transform:translateY(100%) } to{ transform:none } }
+  .modal .m-actions .btn{ flex:1; min-width:0 }
+
+  /* ⑥ 溢出兜底 */
+  .aeon-cal{ width:min(320px,92vw) }
+  table{ display:block; width:100%; overflow-x:auto; white-space:nowrap;
+    -webkit-overflow-scrolling:touch }
+  .chart-box{ -webkit-overflow-scrolling:touch }
+  .aeon-subtitle{ bottom:calc(72px + env(safe-area-inset-bottom)); max-width:90vw }
+
+  /* ⑦ 触屏点击反馈（淡化而非取消，保留"点到了"的感知） */
+  *{ -webkit-tap-highlight-color:rgba(0,0,0,.05) }
+}
+
+/* ---------- 小屏手机（≤600px：进一步收紧） ---------- */
+@media (max-width:600px){
+  body{ font-size:14.5px }
+  .main{ padding:14px 12px calc(84px + env(safe-area-inset-bottom)) }
+  .card{ padding:16px 14px; border-radius:14px }
+  .sec-head h2{ font-size:18px }
+  .side .nav a{ min-width:60px; min-height:50px; font-size:10px; padding:6px 6px }
+  .side .nav a .ic{ width:21px;height:21px }
+  .ticket{ padding:12px 12px 12px 16px }
+  .ticket .t-body b{ font-size:14px }
+  .flow-row .f-body b{ font-size:13.5px }
+  .flow-row .f-amt{ font-size:14.5px }
+  .amount-input{ font-size:24px }
+  .sticker{ font-size:10px; padding:3px 9px }
+}
+
+/* ---------- 超小屏（≤380px：iPhone SE / 老机型） ---------- */
+@media (max-width:380px){
+  body{ font-size:14px }
+  .main{ padding:12px 10px calc(80px + env(safe-area-inset-bottom)) }
+  .side .nav a{ min-width:56px; font-size:9.5px }
+  .btn{ padding:11px 14px }
+  .sec-head{ gap:8px }
+  .sec-head h2{ font-size:17px }
+  .card{ padding:14px 12px }
+}
+
+/* ---------- 横屏矮适配（避免内容被过度压缩） ---------- */
+@media (max-height:480px) and (orientation:landscape){
+  .side .nav a{ min-height:44px }
+  .side .nav a .ic{ width:19px;height:19px }
+  .main{ padding-bottom:calc(72px + env(safe-area-inset-bottom)) }
+}
+
+/* ---------- 尊重"减少动态效果"偏好 ---------- */
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.01ms !important; transition-duration:.01ms !important }
 }
